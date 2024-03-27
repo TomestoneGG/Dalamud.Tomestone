@@ -11,7 +11,7 @@ namespace Dalamud.Tomestone
     public sealed class Plugin : IDalamudPlugin
     {
         public string Name => "Tomestone";
-        private const string CommandName = "/tomestone";
+        private const string CommandName = "/ptomestone";
 
         private DalamudPluginInterface PluginInterface { get; init; }
         private ICommandManager CommandManager { get; init; }
