@@ -4,14 +4,14 @@ using Dalamud.Interface.Internal;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
-namespace SamplePlugin.Windows;
+namespace Dalamud.Tomestone.Windows;
 
 public class MainWindow : Window, IDisposable
 {
-    private IDalamudTextureWrap GoatImage;
+    private IDalamudTextureWrap TomestoneImage;
     private Plugin Plugin;
 
-    public MainWindow(Plugin plugin, IDalamudTextureWrap goatImage) : base(
+    public MainWindow(Plugin plugin, IDalamudTextureWrap tomestoneImage) : base(
         "My Amazing Window", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         this.SizeConstraints = new WindowSizeConstraints
@@ -20,13 +20,13 @@ public class MainWindow : Window, IDisposable
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
-        this.GoatImage = goatImage;
+        this.TomestoneImage = tomestoneImage;
         this.Plugin = plugin;
     }
 
     public void Dispose()
     {
-        this.GoatImage.Dispose();
+        this.TomestoneImage.Dispose();
     }
 
     public override void Draw()
@@ -40,9 +40,9 @@ public class MainWindow : Window, IDisposable
 
         ImGui.Spacing();
 
-        ImGui.Text("Have a goat:");
+        ImGui.Text("Have a tomestone:");
         ImGui.Indent(55);
-        ImGui.Image(this.GoatImage.ImGuiHandle, new Vector2(this.GoatImage.Width, this.GoatImage.Height));
+        ImGui.Image(this.TomestoneImage.ImGuiHandle, new Vector2(this.TomestoneImage.Width, this.TomestoneImage.Height));
         ImGui.Unindent(55);
     }
 }
