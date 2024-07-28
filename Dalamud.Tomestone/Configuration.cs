@@ -2,27 +2,19 @@
 using Dalamud.Plugin;
 using System;
 
-namespace Dalamud.Tomestone
+namespace SamplePlugin;
+
+[Serializable]
+public class Configuration : IPluginConfiguration
 {
-    [Serializable]
-    public class Configuration : IPluginConfiguration
+    public int Version { get; set; } = 0;
+
+    public bool IsConfigWindowMovable { get; set; } = true;
+    public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
+
+    // the below exist just to make saving less cumbersome
+    public void Save()
     {
-        public int Version { get; set; } = 0;
-
-        public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
-
-        // the below exist just to make saving less cumbersome
-        [NonSerialized]
-        private DalamudPluginInterface? PluginInterface;
-
-        public void Initialize(DalamudPluginInterface pluginInterface)
-        {
-            this.PluginInterface = pluginInterface;
-        }
-
-        public void Save()
-        {
-            this.PluginInterface!.SavePluginConfig(this);
-        }
+        Plugin.PluginInterface.SavePluginConfig(this);
     }
 }

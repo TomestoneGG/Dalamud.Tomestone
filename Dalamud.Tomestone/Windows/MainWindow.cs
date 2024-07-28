@@ -1,48 +1,83 @@
-﻿using System;
+using System;
 using System.Numerics;
 using Dalamud.Interface.Internal;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin.Services;
 using ImGuiNET;
 
-namespace Dalamud.Tomestone.Windows;
+namespace SamplePlugin.Windows;
 
 public class MainWindow : Window, IDisposable
 {
-    private IDalamudTextureWrap TomestoneImage;
+    private string LogoImagePath;
     private Plugin Plugin;
 
-    public MainWindow(Plugin plugin, IDalamudTextureWrap tomestoneImage) : base(
-        "My Amazing Window", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+    // We give this window a hidden ID using ##
+    // So that the user will see "My Amazing Window" as window title,
+    // but for ImGui the ID is "My Amazing Window##With a hidden ID"
+    public MainWindow(Plugin plugin, string logoImagePath)
+        : base("My Amazing Window##With a hidden ID", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
-        this.SizeConstraints = new WindowSizeConstraints
+        SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(375, 330),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
-        this.TomestoneImage = tomestoneImage;
-        this.Plugin = plugin;
+        LogoImagePath = logoImagePath;
+        Plugin = plugin;
     }
 
-    public void Dispose()
-    {
-        this.TomestoneImage.Dispose();
-    }
+    public void Dispose() { }
 
     public override void Draw()
     {
-        ImGui.Text($"The random config bool is {this.Plugin.Configuration.SomePropertyToBeSavedAndWithADefault}");
+        ImGui.Text("Have a tomestone:");
+        var goatImage = Plugin.TextureProvider.GetFromFile(LogoImagePath).GetWrapOrDefault();
+        if (goatImage != null)
+        {
+            ImGuiHelpers.ScaledIndent(55f);
+            ImGui.Image(goatImage.ImGuiHandle, new Vector2(goatImage.Width, goatImage.Height));
+            ImGuiHelpers.ScaledIndent(-55f);
+        }
+        else
+        {
+            ImGui.Text("Image not found.");
+        }
 
         if (ImGui.Button("Show Settings"))
         {
-            this.Plugin.DrawConfigUI();
+            Plugin.ToggleConfigUI();
         }
 
         ImGui.Spacing();
 
-        ImGui.Text("Have a tomestone:");
-        ImGui.Indent(55);
-        ImGui.Image(this.TomestoneImage.ImGuiHandle, new Vector2(this.TomestoneImage.Width, this.TomestoneImage.Height));
-        ImGui.Unindent(55);
+        // Display Status information from Plugin.dataHandler (UpdateError, LastUpdate, UpdateMessage)
+        ImGui.Text($"Last Update: {Plugin.dataHandler.lastUpdate}");
+        ImGui.Text($"Update Error: {Plugin.dataHandler.UpdateError}");
+        ImGui.Text($"Update Message: {Plugin.dataHandler.UpdateMessage}");
+
+        ImGui.Spacing();
+
+        // Display benchmark information (times are in microseconds)
+        ImGui.Text($"Player: {Plugin.dataHandler.status.basePlayerUpdate}μs");
+        ImGui.Text($"Mounts: {Plugin.dataHandler.status.mountUpdate}μs");
+        ImGui.Text($"Minions: {Plugin.dataHandler.status.minionUpdate}μs");
+        ImGui.Text($"Achievements: {Plugin.dataHandler.status.achievementUpdate}μs");
+        ImGui.Text($"Gearsets: {Plugin.dataHandler.status.gearsetUpdate}μs");
+        ImGui.Text($"Lodestone: {Plugin.dataHandler.status.lodestoneUpdate}μs");
+        ImGui.Text($"Saving: {Plugin.dataHandler.status.backendUpdate}μs");
+
+        // Calculate the total time taken for the last update
+        var total = Plugin.dataHandler.status.basePlayerUpdate +
+                    Plugin.dataHandler.status.mountUpdate +
+                    Plugin.dataHandler.status.minionUpdate +
+                    Plugin.dataHandler.status.achievementUpdate +
+                    Plugin.dataHandler.status.gearsetUpdate +
+                    Plugin.dataHandler.status.lodestoneUpdate +
+                    Plugin.dataHandler.status.backendUpdate;
+
+        ImGui.Text($"Total: {total}μs");
     }
 }
