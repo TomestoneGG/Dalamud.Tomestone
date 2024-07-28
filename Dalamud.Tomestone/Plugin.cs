@@ -4,11 +4,10 @@ using Dalamud.Plugin;
 using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using SamplePlugin.Windows;
-using Dalamud.Tomestone;
+using Dalamud.Tomestone.Windows;
 using System;
 
-namespace SamplePlugin;
+namespace Dalamud.Tomestone;
 
 public sealed class Plugin : IDalamudPlugin
 {
