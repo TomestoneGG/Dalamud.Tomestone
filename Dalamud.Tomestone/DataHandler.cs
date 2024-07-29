@@ -1,180 +1,279 @@
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Tomestone.Models;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.GeneratedSheets;
 using NetStone;
+using NetStone.Model.Parseables.Character.Achievement;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone
 {
     internal class DataHandlerStatus
     {
-        // Last update times
-        public long basePlayerUpdate = 0;
-        public long lodestoneUpdate = 0;
-        public long mountUpdate = 0;
-        public long minionUpdate = 0;
-        public long achievementUpdate = 0;
-        public long gearsetUpdate = 0;
-        public long fishUpdate = 0;
-        public long backendUpdate = 0;
+        // Current status
+        public bool updating = false;
+        // Last update status
+        internal bool UpdateError = false;
+        internal DateTime lastUpdate = DateTime.MinValue;
+        internal string UpdateMessage = String.Empty;
     }
 
     internal class DataHandler
     {
         private Player player;
         private LodestoneClient? lodestoneClient;
+        private Plugin plugin;
 
-        internal bool UpdateError = false;
-        internal DateTime lastUpdate = DateTime.MinValue;
-        internal string UpdateMessage = String.Empty;
+        private DateTime lastHandledFrameworkUpdate = DateTime.MinValue;
 
+        internal unsafe PlayerState* playerState;
+        internal unsafe UIState* uiState;
+
+        internal HttpClient httpClient;
         internal DataHandlerStatus status = new DataHandlerStatus();
 
-        internal DataHandler()
+        internal DataHandler(Plugin _plugin)
         {
+            plugin = _plugin;
+
+            // Initialize the HttpClient
+            httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri(plugin.Configuration.BaseUrl);
+
             // Initialize the player object
             player = new Player();
             // Initialize the lodestone client in the background
             var clientTask = Task.Run(() => InitLodestoneCient());
         }
 
-        public async void Update()
+        public async void HandleFrameworkUpdate()
         {
-
-            // Check if the last update was less than 15 minutes ago
-            if (DateTime.Now - lastUpdate < TimeSpan.FromMinutes(15))
+            // Check if the last update was less than 5 seconds ago
+            if (DateTime.Now - lastHandledFrameworkUpdate < TimeSpan.FromSeconds(5))
             {
-                Service.Log.Info("Skipping update, last update was less than 15 minutes ago.");
                 return;
             }
 
-            Service.Log.Info("Updating character data.");
+            lastHandledFrameworkUpdate = DateTime.Now;
 
-            // Get the character data
-            GetCharacterInfo();
-
-            // Check if we have a lodestone ID, if not, get it
-            if (player != null && player.lodestoneId == 0)
+            // Check if the player is in a loading screen
+            if (Service.ClientState.LocalPlayer == null)
             {
-                await GetCharacterFromLodestone();
+                return;
+            }
 
-                // TODO: Update the character data in the backend
-                await SendCharacterData();
+            // Grab the players current job and level, if it's different from the last update, send the data
+            var currentJob = Service.ClientState.LocalPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
+            if (currentJob == null)
+            {
+                return;
+            }
+
+            // Check if the job or level changed
+            if (player.currentJobId != (uint)currentJob.RowId || player.currentJobLevel != (uint)Service.ClientState.LocalPlayer.Level)
+            {
+                GetPlayerState();
+                GetUIState();
+                GetCharacterInfo(Service.ClientState.LocalPlayer);
+            }
+        }
+
+        public async void Update()
+        {
+            status.updating = true;
+
+            // Defer getting the local player in a retrying loop, since it's null in a loading screen
+            var localPlayer = await GetLocalPlayer(5000);
+            if (localPlayer == null)
+            {
+                status.updating = false;
+                Service.Log.Error("Failed to get local player.");
+                return;
+            }
+
+            GetPlayerState();
+            GetUIState();
+
+            // Grab character name, job, level and territory data to send to the backend
+            GetCharacterInfo(localPlayer);
+
+            // Check if the last update was less than 30 minutes ago
+            if (DateTime.Now - status.lastUpdate < TimeSpan.FromMinutes(30))
+            {
+                Service.Log.Info("Skipping update, last update was less than 30 minutes ago.");
+                return;
+            }
+
+            // Need API Specs for this, commented out for now
+            // If yes, we can update the whole character data
+            //Service.Log.Info("Updating character data.");
+
+            //GetJobs();
+
+            //player.gearsets = GetGearsets();
+            //Service.Log.Debug($"Player has {player.gearsets.Count} gearsets.");
+
+            //player.mounts = GetUnlockedMounts();
+            //Service.Log.Debug($"Player has {player.mounts.Count} mounts.");
+
+            //player.minions = GetUnlockedMinions();
+            //Service.Log.Debug($"Player has {player.minions.Count} minions.");
+
+            //player.fish = GetFish();
+            //Service.Log.Debug($"Player has catched {player.fish.Count} fish.");
+
+            //player.achievements = GetAchievements();
+            //// We check this because the achievement data is not always loaded
+            //if (player.achievements.Count > 0)
+            //    Service.Log.Debug($"Player has {player.achievements.Count} achievements.");
+
+            //// Check if we have a lodestone ID, if not, get it
+            //if (player != null && player.lodestoneId == 0)
+            //{
+
+            //    await GetCharacterFromLodestone();
+
+            //    // TODO: Update the character data in the backend
+            //    await SendCharacterData();
+            //}
+
+            status.updating = false;
+        }
+
+        // Waits for <maxWait> ms to get the local player
+        private async Task<IPlayerCharacter?> GetLocalPlayer(Int16 maxWait)
+        {
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            while (Service.ClientState.LocalPlayer == null && sw.ElapsedMilliseconds < maxWait)
+            {
+                await Task.Delay(100);
+            }
+
+            // Log if we couldn't get the local player
+            if (Service.ClientState.LocalPlayer == null)
+            {
+                Service.Log.Error("Failed to get local player.");
+                return null;
+            } else {
+                return Service.ClientState.LocalPlayer;
+            }
+        }
+
+        private unsafe void GetPlayerState()
+        {
+            this.playerState = PlayerState.Instance();
+            if (this.playerState == null)
+            {
+                // Throw an exception if the player state is null
+                throw new Exception("Failed to get player state.");
+            }
+        }
+
+        private unsafe void GetUIState()
+        {
+            this.uiState = UIState.Instance();
+            if (this.uiState == null)
+            {
+                // Throw an exception if the UI state is null
+                throw new Exception("Failed to get UI state.");
             }
         }
 
         // Obtains all character information we can get using Dalamud
-        private unsafe void GetCharacterInfo()
+        private unsafe void GetCharacterInfo(IPlayerCharacter localPlayer)
         {
-            // Init a stopwatch to measure the time it takes to get the data
-            var stopwatch = new System.Diagnostics.Stopwatch();
+            player.name = localPlayer.Name.ToString();
+            player.currentJobLevel = (uint)localPlayer.Level;
 
-
-            var localPlayer = Service.ClientState.LocalPlayer;
-
-            if (localPlayer != null)
+            var world = localPlayer.HomeWorld.GetWithLanguage(Game.ClientLanguage.English);
+            if (world == null)
             {
-                stopwatch.Start();
+                Service.Log.Error("Failed to get world name.");
+                return;
+            }
+            player.world = world.Name.ToString();
 
-                // Get the player's name and world
-                player.name = localPlayer.Name.ToString();
-                var world = localPlayer.HomeWorld.GetWithLanguage(Game.ClientLanguage.English);
-                player.world = world.Name.ToString();
+            // Print out the player's current job and level
+            var currentJob = localPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
+            if (currentJob == null)
+            {
+                Service.Log.Error("Failed to get current job.");
+                return;
+            }
+            player.currentJobId = (uint)currentJob.RowId;
 
-                // Print out the player's name and world
-                Service.Log.Debug($"Player: {localPlayer.Name} - {world.Name}");
+            // Print out the players current location
+            var currentTerritory = Service.ClientState.TerritoryType;
+            player.currentZoneId = (uint)currentTerritory;
 
-                // Print out the player's current job and level
-                var currentJob = localPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
-                Service.Log.Debug($"Level {localPlayer.Level} {currentJob.Name}");
+            // Create a new StreamData object
+            var streamData = new StreamData
+            {
+                jobId = player.currentJobId,
+                jobLevel = player.currentJobLevel,
+                zoneId = player.currentZoneId,
+            };
 
-                // Print out the players current location
-                var currentTerritory = Service.ClientState.TerritoryType;
-                Service.Log.Debug($"Current Territory: {currentTerritory}");
+            // Send the stream data to the server, this is a fire and forget operation so we don't await it
+            var streamTask = Task.Run(() => SendStreamData(streamData));
+        }
 
-                // Get the player's jobs using the ClassJobLevelArray
-                var playerState = PlayerState.Instance();
-                var uiState = UIState.Instance();
-                // Iterate over the CLassJob Excel sheet 
-                var classSheet = Service.DataManager.GetExcelSheet<ClassJob>();
+        private unsafe void GetJobs()
+        {
+            // Ensure PlayerState is initialized
+            if (this.playerState == null)
+            {
+                return;
+            }
 
-                if (classSheet != null)
+            // Iterate over the CLassJob Excel sheet 
+            var classSheet = Service.DataManager.GetExcelSheet<ClassJob>();
+
+            if (classSheet != null)
+            {
+                for (int i = 0; i < classSheet.RowCount; i++)
                 {
-                    for (int i = 0; i < classSheet.RowCount; i++)
+                    var job = classSheet.GetRow(Convert.ToUInt32(i));
+                    if (job == null || job.ExpArrayIndex < 0)
                     {
-                        var job = classSheet.GetRow(Convert.ToUInt32(i));
-                        if (job == null || job.ExpArrayIndex < 0)
+                        continue;
+                    }
+
+                    short value = this.playerState->ClassJobLevels[job.ExpArrayIndex];
+
+                    if (value > 0)
+                    {
+                        Service.Log.Debug($"Job: {job.Name} Level: {value}");
+
+                        player.jobs.Add(new Job
                         {
-                            continue;
-                        }
-
-                        short value = playerState->ClassJobLevels[job.ExpArrayIndex];
-
-                        if (value > 0)
-                        {
-                            Service.Log.Debug($"Job: {job.Name} Level: {value}");
-
-                            player.jobs.Add(new Job
-                            {
-                                id = (uint)i,
-                                unlocked = value > 0,
-                                level = value
-                            });
-                        }
+                            id = (uint)i,
+                            unlocked = value > 0,
+                            level = value
+                        });
                     }
                 }
-
-                stopwatch.Stop();
-                status.basePlayerUpdate = stopwatch.Elapsed.Microseconds;
-                stopwatch.Restart();
-
-                player.mounts = GetUnlockedMounts(playerState);
-                Service.Log.Debug($"Player has {player.mounts.Count} mounts.");
-
-                stopwatch.Stop();
-                status.mountUpdate = stopwatch.Elapsed.Microseconds;
-                stopwatch.Restart();
-
-                player.minions = GetUnlockedMinions(uiState);
-                Service.Log.Debug($"Player has {player.minions.Count} minions.");
-
-                stopwatch.Stop();
-                status.minionUpdate = stopwatch.Elapsed.Microseconds;
-                stopwatch.Restart();
-
-                player.achievements = GetAchievements();
-                // We check this because the achievement data is not always loaded
-                if (player.achievements.Count > 0)
-                    Service.Log.Debug($"Player has {player.achievements.Count} achievements.");
-
-                stopwatch.Stop();
-                status.achievementUpdate = stopwatch.Elapsed.Microseconds;
-                stopwatch.Restart();
-
-                player.gearsets = GetGearsets();
-                Service.Log.Debug($"Player has {player.gearsets.Count} gearsets.");
-
-                stopwatch.Stop();
-                status.gearsetUpdate = stopwatch.Elapsed.Microseconds;
-                stopwatch.Restart();
-
-                player.fish = GetFish(playerState);
-                Service.Log.Debug($"Player has catched {player.fish.Count} fish.");
-
-                stopwatch.Stop();
-                status.fishUpdate = stopwatch.Elapsed.Microseconds;
             }
         }
 
-        private unsafe List<uint> GetUnlockedMounts(PlayerState* playerState)
+        private unsafe List<uint> GetUnlockedMounts()
         {
             List<uint> unlockedMounts = new List<uint>();
+
+            // Ensure PlayerState is initialized
+            if (this.playerState == null)
+            {
+                return unlockedMounts;
+            }
+      
             Lumina.Excel.ExcelSheet<Mount>? mountSheet = Service.DataManager.GetExcelSheet<Mount>();
             if (mountSheet == null)
             {
@@ -182,7 +281,7 @@ namespace Dalamud.Tomestone
             }
             foreach (var row in mountSheet)
             {
-                if (playerState->IsMountUnlocked(row.RowId))
+                if (this.playerState->IsMountUnlocked(row.RowId))
                 {
                     unlockedMounts.Add(row.RowId);
                 }
@@ -191,9 +290,15 @@ namespace Dalamud.Tomestone
             return unlockedMounts;
         }
 
-        private unsafe List<uint> GetUnlockedMinions(UIState* uiState)
+        private unsafe List<uint> GetUnlockedMinions()
         {
             List<uint> unlockedMinions = new List<uint>();
+            // Ensure UIState is initialized
+            if (this.uiState == null)
+            {
+                return unlockedMinions;
+            }
+
             Lumina.Excel.ExcelSheet<Companion>? minionSheet = Service.DataManager.GetExcelSheet<Companion>();
             if (minionSheet == null)
             {
@@ -201,7 +306,7 @@ namespace Dalamud.Tomestone
             }
             foreach (var row in minionSheet)
             {
-                if (uiState->IsCompanionUnlocked(row.RowId))
+                if (this.uiState->IsCompanionUnlocked(row.RowId))
                 {
                     unlockedMinions.Add(row.RowId);
                 }
@@ -210,10 +315,15 @@ namespace Dalamud.Tomestone
             return unlockedMinions;
         }
 
-        private unsafe List<uint> GetAchievements()
+        private unsafe List<Models.Achievement> GetAchievements()
         {
-            List<uint> achievements = new List<uint>();
+            List<Models.Achievement> achievements = new List<Models.Achievement>();
             Lumina.Excel.ExcelSheet<Lumina.Excel.GeneratedSheets.Achievement>? achievementSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Achievement>();
+            if (achievementSheet == null)
+            {
+                return achievements;
+            }
+
             var achievementState = FFXIVClientStructs.FFXIV.Client.Game.UI.Achievement.Instance();
 
             if (achievementState == null)
@@ -231,9 +341,13 @@ namespace Dalamud.Tomestone
 
             foreach (var row in achievementSheet)
             {
+
                 if (achievementState->IsComplete((int)row.RowId))
                 {
-                    achievements.Add(row.RowId);
+                    achievements.Add(new Models.Achievement
+                    {
+                        id = (uint)row.RowId,
+                    });
                     continue;
                 }
             }
@@ -247,12 +361,17 @@ namespace Dalamud.Tomestone
             return b;
         }
 
-        private unsafe List<uint> GetFish(PlayerState* playerState)
+        private unsafe List<uint> GetFish()
         {
             List<uint> fish = new List<uint>();
+            // Ensure PlayerState is initialized
+            if (this.playerState == null)
+            {
+                return fish;
+            }
 
             // CaughtFishBitmask has a length of 159 
-            var caughtFishBitmaskArray = playerState->CaughtFishBitmask;
+            var caughtFishBitmaskArray = this.playerState->CaughtFishBitmask;
 
             // Calculate the fish ID and add it to the list of fish caught
             for (int i = 0; i < 159; i++)
@@ -284,7 +403,6 @@ namespace Dalamud.Tomestone
         private unsafe List<Gearset> GetGearsets()
         {
             List<Gearset> gearsets = new List<Gearset>();
-
             try
             {
                 var gearsetModule = RaptureGearsetModule.Instance();
@@ -393,9 +511,6 @@ namespace Dalamud.Tomestone
             try
             {
                 lodestoneClient = await LodestoneClient.GetClientAsync();
-
-                // Update the character data after the client is initialized
-                Update();
             }
             catch (HttpRequestException ex)
             {
@@ -406,9 +521,6 @@ namespace Dalamud.Tomestone
 
         private async Task GetCharacterFromLodestone()
         {
-            Stopwatch sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-
             // Make sure the client is initialized
             if (lodestoneClient == null)
             {
@@ -423,28 +535,101 @@ namespace Dalamud.Tomestone
                     CharacterName = player.name,
                     World = player.world,
                 });
-                var lodestoneCharacter =
+                var characterSearchEntry =
                     searchResponse?.Results
                     .FirstOrDefault(entry => entry.Name == player.name);
+
+                if (characterSearchEntry == null)
+                {
+                    Service.Log.Error("Failed to find character on Lodestone.");
+                    return;
+                };
+
                 // Convert the Lodestone ID to a uint
-                player.lodestoneId = uint.Parse(lodestoneCharacter?.Id ?? "0");
+                player.lodestoneId = uint.Parse(characterSearchEntry.Id ?? "0");
+
+                // Check if the characters achievements are public, and the achievement data is loaded
+                var lsCharacter = await characterSearchEntry.GetCharacter();
+                if (lsCharacter == null)
+                {
+                    Service.Log.Error("Character could not be loaded from lodestone.");
+                    return;
+                }
+
+                var achievementPage = await lsCharacter.GetAchievement();
+                if (achievementPage == null)
+                {
+                    Service.Log.Error("Achievement data could not be loaded from lodestone.");
+                    return;
+                }
+
+                var achievements = new List<CharacterAchievementEntry>();
+                achievements.AddRange(achievementPage.Achievements);
+                for (int i = 1; i < achievementPage.NumPages; i++)
+                {
+                    achievementPage = await achievementPage.GetNextPage();
+                    if (achievementPage == null)
+                    {
+                        // TODO: Check if we could continue here, for now we just break for safety
+                        break;
+                    }
+                    achievements.AddRange(achievementPage.Achievements);
+                }
+
+                // Enrich player achievements with the Lodestone data (timestamps, mostly)
+                foreach (var achievement in player.achievements)
+                {
+                    var lodestoneAchievement = achievements.FirstOrDefault(a => a.Id == achievement.id);
+                    if (lodestoneAchievement == null)
+                    {
+                        continue;
+                    }
+
+                    achievement.timestamp = lodestoneAchievement.TimeAchieved;
+                }
             }
             catch (Exception ex)
             {
                 // Just don't change the lodestoneId
                 Service.Log.Error(ex, "Failed to get character from Lodestone.");
             }
+        }
 
-            sw.Stop();
-            status.lodestoneUpdate = sw.Elapsed.Microseconds;
+        private async Task SendStreamData(StreamData data)
+        {
+            // TODO: Check this way earlier
+            // Make sure we have a API key
+            if (string.IsNullOrEmpty(plugin.Configuration.ApiKey))
+            {
+                Service.Log.Error("API key is missing.");
+                return;
+            }
 
+            // Build the Header
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {plugin.Configuration.ApiKey}");
+
+            // Serialize the player object to JSON
+            var json = System.Text.Json.JsonSerializer.Serialize(data);
+            // Create a new StringContent with the JSON
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            // DEBUG: Log the JSON and Headers
+            Service.Log.Debug($"Sending Headers: {httpClient.DefaultRequestHeaders}");
+            Service.Log.Debug($"Sending JSON: {json}");           
+
+            // Send the data to the server
+            var response = await this.httpClient.PostAsync(plugin.Configuration.StreamPath, content);
+            // Check if the response was successful
+            if (!response.IsSuccessStatusCode)
+            {
+                Service.Log.Error("Failed to send stream data to the server.");
+                return;
+            }
         }
 
         private async Task SendCharacterData()
         {
-            Stopwatch sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-
             // Safeguard against a missing lodestone ID
             if (player.lodestoneId == 0)
             {
@@ -454,42 +639,22 @@ namespace Dalamud.Tomestone
 
             try
             {
-                // TODO: Init a Singleton to handle Http Communication with the backend
-
-                /*
-                // Init a new HttpClient
-                using var client = new HttpClient();
-                // Serialize the player object to JSON
-                var json = System.Text.Json.JsonSerializer.Serialize(player);
-                // Create a new StringContent with the JSON
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                // Send the data to the server
-                var response = await client.PostAsync("http://192.168.178.29:8080/updatePlayer", content);
-                // Check if the response was successful
-                if (!response.IsSuccessStatusCode)
-                {
-                    Service.Log.Error("Failed to send character data to the server.");
-                    return;
-                }
-                */
+                // TODO: Send data
 
                 // Fake await to simulate the request
                 await Task.Delay(1000);
 
                 // Set the last update time to now
-                UpdateError = false;
-                lastUpdate = DateTime.Now;
-                UpdateMessage = "Character data sent to the server.";
+                status.UpdateError = false;
+                status.lastUpdate = DateTime.Now;
+                status.UpdateMessage = "Character data sent to the server.";
             }
             catch (Exception ex)
             {
-                UpdateError = true;
-                UpdateMessage = "Failed to send character data to the server.";
+                status.UpdateError = true;
+                status.UpdateMessage = "Failed to send character data to the server.";
                 Service.Log.Error(ex, "Failed to send character data to the server.");
             }
-
-            sw.Stop();
-            status.backendUpdate = sw.Elapsed.Microseconds;
         }
     }
 }

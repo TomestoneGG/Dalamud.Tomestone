@@ -41,7 +41,7 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
-        dataHandler = new DataHandler();
+        dataHandler = new DataHandler(this);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -60,6 +60,7 @@ public sealed class Plugin : IDalamudPlugin
         // Register events for the plugin
         PluginInterface.Create<Service>();
         Service.ClientState.TerritoryChanged += OnTerritoryChanged;
+        Service.Framework.Update += OnFrameworkUpdate;
     }
 
     public void Dispose()
@@ -67,6 +68,7 @@ public sealed class Plugin : IDalamudPlugin
         // Unregister events for the plugin safely
         try { 
             Service.ClientState.TerritoryChanged -= OnTerritoryChanged;
+            Service.Framework.Update -= OnFrameworkUpdate;
         } catch { }
 
         WindowSystem.RemoveAllWindows();
@@ -77,8 +79,23 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler(CommandName);
     }
 
+    private void OnFrameworkUpdate(IFramework framework)
+    {
+        if (!Service.ClientState.IsLoggedIn) return;
+
+        // Polling the framework is required to know if we had a ClassJob change
+        try { 
+            dataHandler.HandleFrameworkUpdate();
+        } catch (Exception e) {
+            Service.Log.Error(e, "Failed to handle framework update");
+        }
+    }
+
     private void OnTerritoryChanged(ushort ID)
     {
+        // Block if we aren't ingame yet
+        if (!Service.ClientState.IsLoggedIn) return;
+
         // do something when the territory changes
         Service.Log.Info("Territory changed to {0}", ID);
         try { 
