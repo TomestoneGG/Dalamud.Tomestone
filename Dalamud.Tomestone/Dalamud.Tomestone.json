@@ -1,12 +1,11 @@
 {
-  "Author": "TomestoneGG",
-  "Name": "Tomestone",
-  "InternalName": "Tomestone",
-  "Punchline": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
-  "Description": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
-  "ApplicableVersion": "any",
-  "Tags": [
-    "tomestone",
-    "plugin"
-  ]
+    "Author": "TomestoneGG",
+    "Name": "Tomestone",
+    "Punchline": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
+    "Description": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
+    "ApplicableVersion": "any",
+    "Tags": [
+        "tomestone",
+        "plugin"
+    ]
 }

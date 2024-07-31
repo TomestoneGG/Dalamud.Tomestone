@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 using System.Numerics;
-using Dalamud.Interface.Internal;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
@@ -8,41 +8,53 @@ namespace Dalamud.Tomestone.Windows;
 
 public class MainWindow : Window, IDisposable
 {
-    private IDalamudTextureWrap TomestoneImage;
-    private Plugin Plugin;
+    private string LogoImagePath;
+    private Plugin plugin;
 
-    public MainWindow(Plugin plugin, IDalamudTextureWrap tomestoneImage) : base(
-        "My Amazing Window", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+    // We give this window a hidden ID using ##
+    // So that the user will see "TomestoneGG" as window title,
+    // but for ImGui the ID is "TomestoneGG##Main"
+    public MainWindow(Plugin _plugin, string logoImagePath)
+        : base("TomestoneGG##Main", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
-        this.SizeConstraints = new WindowSizeConstraints
+        SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(375, 330),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
 
-        this.TomestoneImage = tomestoneImage;
-        this.Plugin = plugin;
+        LogoImagePath = logoImagePath;
+        plugin = _plugin;
     }
 
-    public void Dispose()
-    {
-        this.TomestoneImage.Dispose();
-    }
+    public void Dispose() { }
 
     public override void Draw()
     {
-        ImGui.Text($"The random config bool is {this.Plugin.Configuration.SomePropertyToBeSavedAndWithADefault}");
+        ImGui.Text("Have a tomestone:");
+        var goatImage = Plugin.TextureProvider.GetFromFile(LogoImagePath).GetWrapOrDefault();
+        if (goatImage != null)
+        {
+            ImGuiHelpers.ScaledIndent(55f);
+            ImGui.Image(goatImage.ImGuiHandle, new Vector2(goatImage.Width, goatImage.Height));
+            ImGuiHelpers.ScaledIndent(-55f);
+        }
+        else
+        {
+            ImGui.Text("Image not found.");
+        }
 
         if (ImGui.Button("Show Settings"))
         {
-            this.Plugin.DrawConfigUI();
+            plugin.ToggleConfigUI();
         }
 
         ImGui.Spacing();
 
-        ImGui.Text("Have a tomestone:");
-        ImGui.Indent(55);
-        ImGui.Image(this.TomestoneImage.ImGuiHandle, new Vector2(this.TomestoneImage.Width, this.TomestoneImage.Height));
-        ImGui.Unindent(55);
+        // Display Status information from plugin.dataHandler (UpdateError, LastUpdate, UpdateMessage)
+        ImGui.Text($"Update in progress?: {plugin.dataHandler.status.updating}");
+        ImGui.Text($"Last Update: {plugin.dataHandler.status.lastUpdate}");
+        ImGui.Text($"Update Error: {plugin.dataHandler.status.UpdateError}");
+        ImGui.Text($"Update Message: {plugin.dataHandler.status.UpdateMessage}");
     }
 }
