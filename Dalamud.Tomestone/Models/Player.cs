@@ -44,7 +44,8 @@ namespace Dalamud.Tomestone.Models
     {
         public uint jobId { get; set; } = 0;
         public uint jobLevel { get; set; } = 0;
-        public uint zoneId { get; set; } = 0;
+        public uint territoryId { get; set; } = 0;
+        public string currentWorld { get; set; } = string.Empty;
     }
 
     internal class Job

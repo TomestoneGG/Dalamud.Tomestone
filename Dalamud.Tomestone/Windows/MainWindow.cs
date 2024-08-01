@@ -9,12 +9,12 @@ namespace Dalamud.Tomestone.Windows;
 public class MainWindow : Window, IDisposable
 {
     private string LogoImagePath;
-    private Plugin plugin;
+    private Tomestone plugin;
 
     // We give this window a hidden ID using ##
     // So that the user will see "TomestoneGG" as window title,
     // but for ImGui the ID is "TomestoneGG##Main"
-    public MainWindow(Plugin _plugin, string logoImagePath)
+    public MainWindow(Tomestone _plugin, string logoImagePath)
         : base("TomestoneGG##Main", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         SizeConstraints = new WindowSizeConstraints
@@ -32,7 +32,7 @@ public class MainWindow : Window, IDisposable
     public override void Draw()
     {
         ImGui.Text("Have a tomestone:");
-        var goatImage = Plugin.TextureProvider.GetFromFile(LogoImagePath).GetWrapOrDefault();
+        var goatImage = Tomestone.TextureProvider.GetFromFile(LogoImagePath).GetWrapOrDefault();
         if (goatImage != null)
         {
             ImGuiHelpers.ScaledIndent(55f);
@@ -42,11 +42,6 @@ public class MainWindow : Window, IDisposable
         else
         {
             ImGui.Text("Image not found.");
-        }
-
-        if (ImGui.Button("Show Settings"))
-        {
-            plugin.ToggleConfigUI();
         }
 
         ImGui.Spacing();

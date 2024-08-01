@@ -29,7 +29,7 @@ namespace Dalamud.Tomestone
     {
         private Player player;
         private LodestoneClient? lodestoneClient;
-        private Plugin plugin;
+        private Tomestone plugin;
 
         private DateTime lastHandledFrameworkUpdate = DateTime.MinValue;
 
@@ -39,13 +39,13 @@ namespace Dalamud.Tomestone
         internal HttpClient httpClient;
         internal DataHandlerStatus status = new DataHandlerStatus();
 
-        internal DataHandler(Plugin _plugin)
+        internal DataHandler(Tomestone _plugin)
         {
             plugin = _plugin;
 
             // Initialize the HttpClient
             httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri(plugin.Configuration.BaseUrl);
+            // httpClient.BaseAddress = new Uri(plugin.Configuration.BaseUrl);
 
             // Initialize the player object
             player = new Player();
@@ -214,12 +214,32 @@ namespace Dalamud.Tomestone
             var currentTerritory = Service.ClientState.TerritoryType;
             player.currentZoneId = (uint)currentTerritory;
 
+            string currentWorldName = string.Empty;
+            // Check if the player is traveling to another world
+            if (localPlayer.CurrentWorld != null)
+            {
+                var currentWorld = localPlayer.CurrentWorld.GetWithLanguage(Game.ClientLanguage.English);
+                if (currentWorld == null)
+                {
+                    Service.Log.Error("Failed to get current world name.");
+                    return;
+                }
+
+                // Check if the player is traveling to another world, or if they are in the same world
+                if (currentWorld.Name != world.Name)
+                {
+                    Service.Log.Debug($"Player is traveling to {currentWorld.Name}.");
+                    currentWorldName = currentWorld.Name.ToString().ToLower();
+                }
+            }
+
             // Create a new StreamData object
             var streamData = new StreamData
             {
                 jobId = player.currentJobId,
                 jobLevel = player.currentJobLevel,
-                zoneId = player.currentZoneId,
+                territoryId = player.currentZoneId,
+                currentWorld = currentWorldName,
             };
 
             // Send the stream data to the server, this is a fire and forget operation so we don't await it
@@ -599,31 +619,34 @@ namespace Dalamud.Tomestone
         {
             // TODO: Check this way earlier
             // Make sure we have a API key
-            if (string.IsNullOrEmpty(plugin.Configuration.ApiKey))
+            if (string.IsNullOrEmpty(plugin.Configuration.DalamudToken))
             {
                 Service.Log.Error("API key is missing.");
                 return;
             }
 
-            // Build the Header
-            httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {plugin.Configuration.ApiKey}");
+            // Set the API key in the request headers
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", plugin.Configuration.DalamudToken);
 
             // Serialize the player object to JSON
             var json = System.Text.Json.JsonSerializer.Serialize(data);
             // Create a new StringContent with the JSON
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // DEBUG: Log the JSON and Headers
-            Service.Log.Debug($"Sending Headers: {httpClient.DefaultRequestHeaders}");
-            Service.Log.Debug($"Sending JSON: {json}");           
-
+            // URL Encode the Player Name
+            var playerName = Uri.EscapeDataString(player.name.ToLower());
+            // lowercase the world name
+            var worldName = player.world.ToLower();
+            // Build our request URL ("https://www.tomestone.gg/api/dalamud/update-activity/<CHARNAME>/<WORLD>")
+            var url = $"https://tomestone.gg/api/dalamud/update-activity/{playerName}/{worldName}";
+            Service.Log.Debug($"Sending to URL: {url}");
             // Send the data to the server
-            var response = await this.httpClient.PostAsync(plugin.Configuration.StreamPath, content);
+            var response = await httpClient.PostAsync(url, content);
             // Check if the response was successful
             if (!response.IsSuccessStatusCode)
             {
                 Service.Log.Error("Failed to send stream data to the server.");
+                Service.Log.Error($"Response: {response.StatusCode}");
                 return;
             }
         }

@@ -9,15 +9,14 @@ public class Configuration : IPluginConfiguration
 {
     public int Version { get; set; } = 0;
 
-    public string ApiKey { get; set; } = string.Empty;
+    public string DalamudToken { get; set; } = string.Empty;
 
-    // This is in while testing to setup the API
-    public string BaseUrl { get; set; } = "https://api.tomestone.gg/";
-    public string StreamPath { get; set; } = "streams";
+    public bool Enabled { get; set; } = true;
+    public bool SendActivity { get; set; } = true;
 
     // the below exist just to make saving less cumbersome
     public void Save()
     {
-        Plugin.PluginInterface.SavePluginConfig(this);
+        Tomestone.PluginInterface.SavePluginConfig(this);
     }
 }
