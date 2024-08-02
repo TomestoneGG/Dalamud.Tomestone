@@ -6,7 +6,7 @@
         "RepoUrl": "https://github.com/TomestoneGG/Dalamud.Tomestone",
         "DownloadLinkInstall": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.1-beta/latest.zip",
         "DownloadLinkUpdate": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.1-beta/latest.zip",
-        "AssemblyVersion": "0.0.0.1",
+        "AssemblyVersion": "0.1.0.1",
         "Changelog": "",
         "Description": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
         "ApplicableVersion": "any",
