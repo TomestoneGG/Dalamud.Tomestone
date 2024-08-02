@@ -1,25 +1,26 @@
 [
-  {
-    "Author": "TomestoneGG",
-    "Name": "Tomestone",
-    "InternalName": "Dalamud.Tomestone",
-    "RepoUrl": "https://github.com/TomestoneGG/Dalamud.Tomestone",
-    "DownloadLinkInstall": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.1-beta/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.1-beta/latest.zip",
-    "AssemblyVersion": "0.0.0.1",
-    "Changelog": "",
-    "Description": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
-    "ApplicableVersion": "any",
-    "Tags": [
-      "tomestone",
-      "plugin"
-    ],
-    "DalamudApiLevel": 10,
-    "LoadRequiredState": 0,
-    "LoadSync": false,
-    "CanUnloadAsync": false,
-    "LoadPriority": 0,
-    "Punchline": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
-    "AcceptsFeedback": true
-  }
+    {
+        "Author": "TomestoneGG",
+        "Name": "Tomestone",
+        "InternalName": "Dalamud.Tomestone",
+        "RepoUrl": "https://github.com/TomestoneGG/Dalamud.Tomestone",
+        "DownloadLinkInstall": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.1-beta/latest.zip",
+        "DownloadLinkUpdate": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.1-beta/latest.zip",
+        "AssemblyVersion": "0.0.0.1",
+        "Changelog": "",
+        "Description": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
+        "ApplicableVersion": "any",
+        "Tags": [
+            "tomestone",
+            "plugin"
+        ],
+        "DalamudApiLevel": 10,
+        "LoadRequiredState": 0,
+        "LoadSync": false,
+        "CanUnloadAsync": false,
+        "LoadPriority": 0,
+        "LastUpdate": 1722564084082,
+        "Punchline": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
+        "AcceptsFeedback": true
+    }
 ]

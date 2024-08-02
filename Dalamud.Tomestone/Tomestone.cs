@@ -21,6 +21,7 @@ public unsafe class Tomestone : IDalamudPlugin
     internal static Tomestone T = null!;
 
     internal PluginUI PluginUI;
+    internal FirstLaunchUI FirstLaunchUI;
 
     public Configuration Configuration { get; init; }
 
@@ -55,6 +56,18 @@ public unsafe class Tomestone : IDalamudPlugin
         PluginInterface.Create<Service>();
         Service.ClientState.TerritoryChanged += OnTerritoryChanged;
         Service.Framework.Update += OnFrameworkUpdate;
+
+        // Check if we are already logged in
+        if (Service.ClientState.IsLoggedIn)
+        {
+            // If we are already logged in, we can just call the login event
+            OnLogin();
+        }
+        else
+        {
+            // Else we need to wait for the login event
+            Service.ClientState.Login += OnLogin;
+        }
     }
 
     public void Dispose()
@@ -67,9 +80,20 @@ public unsafe class Tomestone : IDalamudPlugin
         try { 
             Service.ClientState.TerritoryChanged -= OnTerritoryChanged;
             Service.Framework.Update -= OnFrameworkUpdate;
+            Service.ClientState.Login -= OnLogin;
         } catch { }
 
         CommandManager.RemoveHandler(CommandName);
+    }
+
+    private void OnLogin()
+    {
+        // If this is the first launch, show the FirstLaunchUI
+        if (Configuration.IsFirstLaunch)
+        {
+            FirstLaunchUI = new FirstLaunchUI();
+            FirstLaunchUI.Toggle();
+        }
     }
 
     private void OnFrameworkUpdate(IFramework framework)

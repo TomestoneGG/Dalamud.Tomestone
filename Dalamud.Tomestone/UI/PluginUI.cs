@@ -17,17 +17,7 @@ namespace Dalamud.Tomestone.UI
 {
     internal class PluginUI : Window
     {
-        // State Event Handler
-
-
-        private bool visible = false;
         public OpenWindow OpenWindow { get; set; }
-
-        public bool Visible
-        {
-            get { return this.visible; }
-            set { this.visible = value; }
-        }
 
         public PluginUI() : base($"{Tomestone.T.Name} {Tomestone.T.GetType().Assembly.GetName().Version}###Tomestone")
         {
@@ -113,7 +103,7 @@ namespace Dalamud.Tomestone.UI
                                 Settings.Draw();
                                 break;
                             case OpenWindow.Debug:
-                                ImGui.Text("Debug");
+                                Debug.Draw();
                                 break;
                         }
                     }

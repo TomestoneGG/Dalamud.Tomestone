@@ -8,6 +8,7 @@ namespace Dalamud.Tomestone;
 public class Configuration : IPluginConfiguration
 {
     public int Version { get; set; } = 0;
+    public bool IsFirstLaunch { get; set; } = true;
 
     public string DalamudToken { get; set; } = string.Empty;
 
