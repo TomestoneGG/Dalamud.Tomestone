@@ -1,6 +1,5 @@
-using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Tomestone.API;
 using Dalamud.Tomestone.Models;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.GeneratedSheets;
@@ -10,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone
@@ -25,27 +23,31 @@ namespace Dalamud.Tomestone
         internal string UpdateMessage = String.Empty;
     }
 
+    /// <summary>
+    /// DataHandler acts as a control plane for the data collection and sending process.
+    /// It manages timers and instructs the collection and sending of data, as well as handling and displaying errors.
+    /// This is made so we can split off dalamud/api specific code from error handling and data processing.
+    /// </summary>
     internal class DataHandler
     {
-        private Player player;
-        private LodestoneClient? lodestoneClient;
-        private Tomestone plugin;
+        private Player player; // Player object to store character state
+        private LodestoneClient? lodestoneClient; // Lodestone client to fetch character data, eventually not needed
+        private Tomestone plugin; // Reference to the plugin
 
         private DateTime lastHandledFrameworkUpdate = DateTime.MinValue;
 
         internal unsafe PlayerState* playerState;
         internal unsafe UIState* uiState;
 
-        internal HttpClient httpClient;
+        internal TomestoneAPI api;
         internal DataHandlerStatus status = new DataHandlerStatus();
 
         internal DataHandler(Tomestone _plugin)
         {
             plugin = _plugin;
 
-            // Initialize the HttpClient
-            httpClient = new HttpClient();
-            // httpClient.BaseAddress = new Uri(plugin.Configuration.BaseUrl);
+            // Initialize the API Client
+            api = new TomestoneAPI(plugin.Configuration);
 
             // Initialize the player object
             player = new Player();
@@ -81,19 +83,20 @@ namespace Dalamud.Tomestone
             {
                 GetPlayerState();
                 GetUIState();
-                GetCharacterInfo(Service.ClientState.LocalPlayer);
+                // Grab character name, job, level territory and traveling data to send to the backend
+                var playerData = Features.Player.GetCharacterInfo(Service.ClientState.LocalPlayer);
+
+                // Check for changes in the player state and send if needed
+                HandlePlayerState(playerData);
             }
         }
 
         public async void Update()
         {
-            status.updating = true;
-
             // Defer getting the local player in a retrying loop, since it's null in a loading screen
-            var localPlayer = await GetLocalPlayer(5000);
+            var localPlayer = await Features.Player.GetLocalPlayer(5000);
             if (localPlayer == null)
             {
-                status.updating = false;
                 Service.Log.Error("Failed to get local player.");
                 return;
             }
@@ -101,8 +104,11 @@ namespace Dalamud.Tomestone
             GetPlayerState();
             GetUIState();
 
-            // Grab character name, job, level and territory data to send to the backend
-            GetCharacterInfo(localPlayer);
+            // Grab character name, job, level territory and traveling data to send to the backend
+            var playerData = Features.Player.GetCharacterInfo(localPlayer);
+
+            // Check for changes in the player state and send if needed
+            HandlePlayerState(playerData);
 
             // Check if the last update was less than 30 minutes ago
             if (DateTime.Now - status.lastUpdate < TimeSpan.FromMinutes(30))
@@ -111,28 +117,23 @@ namespace Dalamud.Tomestone
                 return;
             }
 
+            // These aren't in the official Plugin yet
+#if DEBUG
             // Need API Specs for this, commented out for now
             // If yes, we can update the whole character data
             //Service.Log.Info("Updating character data.");
 
-            //GetJobs();
+            HandleJobState();
 
-            //player.gearsets = GetGearsets();
-            //Service.Log.Debug($"Player has {player.gearsets.Count} gearsets.");
+            HandleMountState();
 
-            //player.mounts = GetUnlockedMounts();
-            //Service.Log.Debug($"Player has {player.mounts.Count} mounts.");
+            HandleMinionState();
 
-            //player.minions = GetUnlockedMinions();
-            //Service.Log.Debug($"Player has {player.minions.Count} minions.");
+            HandleAchievementState();
 
-            //player.fish = GetFish();
-            //Service.Log.Debug($"Player has catched {player.fish.Count} fish.");
+            HandleFishState();
 
-            //player.achievements = GetAchievements();
-            //// We check this because the achievement data is not always loaded
-            //if (player.achievements.Count > 0)
-            //    Service.Log.Debug($"Player has {player.achievements.Count} achievements.");
+            HandleGearsetState();
 
             //// Check if we have a lodestone ID, if not, get it
             //if (player != null && player.lodestoneId == 0)
@@ -143,28 +144,9 @@ namespace Dalamud.Tomestone
             //    // TODO: Update the character data in the backend
             //    await SendCharacterData();
             //}
-
-            status.updating = false;
-        }
-
-        // Waits for <maxWait> ms to get the local player
-        private async Task<IPlayerCharacter?> GetLocalPlayer(Int16 maxWait)
-        {
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-            while (Service.ClientState.LocalPlayer == null && sw.ElapsedMilliseconds < maxWait)
-            {
-                await Task.Delay(100);
-            }
-
-            // Log if we couldn't get the local player
-            if (Service.ClientState.LocalPlayer == null)
-            {
-                Service.Log.Error("Failed to get local player.");
-                return null;
-            } else {
-                return Service.ClientState.LocalPlayer;
-            }
+#endif
+            // Set the last update time to now
+            status.lastUpdate = DateTime.Now;
         }
 
         private unsafe void GetPlayerState()
@@ -187,342 +169,161 @@ namespace Dalamud.Tomestone
             }
         }
 
-        // Obtains all character information we can get using Dalamud
-        private unsafe void GetCharacterInfo(IPlayerCharacter localPlayer)
+        // Handles base player data and activity data
+        private unsafe void HandlePlayerState(Models.Player newPlayer)
         {
-            player.name = localPlayer.Name.ToString();
-            player.currentJobLevel = (uint)localPlayer.Level;
-
-            var world = localPlayer.HomeWorld.GetWithLanguage(Game.ClientLanguage.English);
-            if (world == null)
+            var changed = false;
+            // Check if the player object is null, if so, set it and send initial activity data
+            if (this.player == null)
             {
-                Service.Log.Error("Failed to get world name.");
-                return;
+                this.player = newPlayer;
+                changed = true;
             }
-            player.world = world.Name.ToString();
-
-            // Print out the player's current job and level
-            var currentJob = localPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
-            if (currentJob == null)
+            // Check if the player state (job, level, zone, current world) has changed
+            else if (this.player.currentJobId != newPlayer.currentJobId || this.player.currentJobLevel != newPlayer.currentJobLevel || this.player.currentZoneId != newPlayer.currentZoneId || this.player.currentWorldName != newPlayer.currentWorldName)
             {
-                Service.Log.Error("Failed to get current job.");
-                return;
+                this.player = newPlayer;
+                changed = true;
             }
-            player.currentJobId = (uint)currentJob.RowId;
 
-            // Print out the players current location
-            var currentTerritory = Service.ClientState.TerritoryType;
-            player.currentZoneId = (uint)currentTerritory;
-
-            string currentWorldName = string.Empty;
-            // Check if the player is traveling to another world
-            if (localPlayer.CurrentWorld != null)
+            if (changed)
             {
-                var currentWorld = localPlayer.CurrentWorld.GetWithLanguage(Game.ClientLanguage.English);
-                if (currentWorld == null)
+                var activity = new ActivityDTO
                 {
-                    Service.Log.Error("Failed to get current world name.");
-                    return;
-                }
-
-                // Check if the player is traveling to another world, or if they are in the same world
-                if (currentWorld.Name != world.Name)
-                {
-                    Service.Log.Debug($"Player is traveling to {currentWorld.Name}.");
-                    currentWorldName = currentWorld.Name.ToString().ToLower();
-                }
+                    jobId = newPlayer.currentJobId,
+                    jobLevel = newPlayer.currentJobLevel,
+                    territoryId = newPlayer.currentZoneId,
+                    currentWorld = newPlayer.currentWorldName,
+                };
+                // Send the stream data to the server, this is a fire and forget operation so we don't await it
+                var streamTask = Task.Run(() => api.SendActivity(player.name, player.world, activity));
             }
-
-            // Create a new StreamData object
-            var streamData = new StreamData
-            {
-                jobId = player.currentJobId,
-                jobLevel = player.currentJobLevel,
-                territoryId = player.currentZoneId,
-                currentWorld = currentWorldName,
-            };
-
-            // Send the stream data to the server, this is a fire and forget operation so we don't await it
-            var streamTask = Task.Run(() => SendStreamData(streamData));
         }
 
-        private unsafe void GetJobs()
+        private unsafe void HandleJobState()
         {
-            // Ensure PlayerState is initialized
-            if (this.playerState == null)
+            // Get the jobs from the player state
+            var jobs = Features.Jobs.GetJobs(this.playerState);
+            if (jobs == null)
             {
                 return;
             }
 
-            // Iterate over the CLassJob Excel sheet 
-            var classSheet = Service.DataManager.GetExcelSheet<ClassJob>();
-
-            if (classSheet != null)
+            // Check if we have any jobs
+            if (jobs.Count == 0)
             {
-                for (int i = 0; i < classSheet.RowCount; i++)
-                {
-                    var job = classSheet.GetRow(Convert.ToUInt32(i));
-                    if (job == null || job.ExpArrayIndex < 0)
-                    {
-                        continue;
-                    }
-
-                    short value = this.playerState->ClassJobLevels[job.ExpArrayIndex];
-
-                    if (value > 0)
-                    {
-                        Service.Log.Debug($"Job: {job.Name} Level: {value}");
-
-                        player.jobs.Add(new Job
-                        {
-                            id = (uint)i,
-                            unlocked = value > 0,
-                            level = value
-                        });
-                    }
-                }
+                return;
             }
+
+            // TODO: Send job data to the server
+            Service.Log.Debug($"Player has {jobs.Count} jobs.");
         }
 
-        private unsafe List<uint> GetUnlockedMounts()
+        private unsafe void HandleMountState()
         {
-            List<uint> unlockedMounts = new List<uint>();
-
-            // Ensure PlayerState is initialized
-            if (this.playerState == null)
+            // Get the mounts from the player state
+            var mounts = Features.Mounts.GetUnlockedMounts(this.playerState);
+            if (mounts == null)
             {
-                return unlockedMounts;
-            }
-      
-            Lumina.Excel.ExcelSheet<Mount>? mountSheet = Service.DataManager.GetExcelSheet<Mount>();
-            if (mountSheet == null)
-            {
-                return unlockedMounts;
-            }
-            foreach (var row in mountSheet)
-            {
-                if (this.playerState->IsMountUnlocked(row.RowId))
-                {
-                    unlockedMounts.Add(row.RowId);
-                }
+                return;
             }
 
-            return unlockedMounts;
+            // Check if we have any mounts
+            if (mounts.Count == 0)
+            {
+                return;
+            }
+
+            // TODO: Send mount data to the server
+            Service.Log.Debug($"Player has {mounts.Count} mounts.");
         }
 
-        private unsafe List<uint> GetUnlockedMinions()
+        private unsafe void HandleMinionState()
         {
-            List<uint> unlockedMinions = new List<uint>();
-            // Ensure UIState is initialized
-            if (this.uiState == null)
+            // Get the minions from the ui state
+            var minions = Features.Minions.GetUnlockedMinions(this.uiState);
+            if (minions == null)
             {
-                return unlockedMinions;
+                return;
             }
 
-            Lumina.Excel.ExcelSheet<Companion>? minionSheet = Service.DataManager.GetExcelSheet<Companion>();
-            if (minionSheet == null)
+            // Check if we have any minions
+            if (minions.Count == 0)
             {
-                return unlockedMinions;
-            }
-            foreach (var row in minionSheet)
-            {
-                if (this.uiState->IsCompanionUnlocked(row.RowId))
-                {
-                    unlockedMinions.Add(row.RowId);
-                }
+                return;
             }
 
-            return unlockedMinions;
+            // TODO: Send minion data to the server
+            Service.Log.Debug($"Player has {minions.Count} minions.");
         }
 
-        private unsafe List<Models.Achievement> GetAchievements()
+        private unsafe void HandleAchievementState()
         {
-            List<Models.Achievement> achievements = new List<Models.Achievement>();
-            Lumina.Excel.ExcelSheet<Lumina.Excel.GeneratedSheets.Achievement>? achievementSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Achievement>();
-            if (achievementSheet == null)
+            // Get the achievements from the player state
+            var achievements = Features.Achievements.GetAchievements();
+            if (achievements == null)
             {
-                return achievements;
+                return;
             }
 
-            var achievementState = FFXIVClientStructs.FFXIV.Client.Game.UI.Achievement.Instance();
-
-            if (achievementState == null)
+            // Check if we have any achievements
+            if (achievements.Count == 0)
             {
-                return achievements;
+                return;
             }
 
-            // Check if the achievement data is loaded
-            bool loaded = achievementState->IsLoaded();
-            if (!loaded)
-            {
-                Service.Log.Info("Achievement data is not loaded.");
-                return achievements;
-            }
-
-            foreach (var row in achievementSheet)
-            {
-
-                if (achievementState->IsComplete((int)row.RowId))
-                {
-                    achievements.Add(new Models.Achievement
-                    {
-                        id = (uint)row.RowId,
-                    });
-                    continue;
-                }
-            }
-
-            return achievements;
+            // TODO: Send achievement data to the server
+            Service.Log.Debug($"Player has {achievements.Count} achievements.");
         }
 
-        private byte ReverseBits(byte b)
+        private unsafe void HandleFishState()
         {
-            b = (byte)((b * 0x0202020202UL & 0x010884422010UL) % 1023);
-            return b;
-        }
-
-        private unsafe List<uint> GetFish()
-        {
-            List<uint> fish = new List<uint>();
-            // Ensure PlayerState is initialized
-            if (this.playerState == null)
+            // Get the fish from the player state
+            var fish = Features.Fish.GetFish(this.playerState);
+            if (fish == null)
             {
-                return fish;
+                return;
             }
 
-            // CaughtFishBitmask has a length of 159 
-            var caughtFishBitmaskArray = this.playerState->CaughtFishBitmask;
-
-            // Calculate the fish ID and add it to the list of fish caught
-            for (int i = 0; i < 159; i++)
+            // Check if we have any fish
+            if (fish.Count == 0)
             {
-                // Get the current byte
-                byte currentByte = caughtFishBitmaskArray[i];
-
-                // Reverse the bits in the current byte
-                byte reversedByte = ReverseBits(currentByte);
-
-                // Iterate over the bits in the byte
-                for (int j = 0; j < 8; j++)
-                {
-                    // Check if the bit is set
-                    if ((currentByte & (1 << j)) != 0)
-                    {
-                        // Calculate the fish ID
-                        uint fishId = (uint)(i * 8 + j);
-
-                        // Add the fish ID to the list of fish caught
-                        fish.Add(fishId);
-                    }
-                }
+                return;
             }
 
-            return fish;
+            // TODO: Send fish data to the server
+            Service.Log.Debug($"Player has catched {fish.Count} fish.");
         }
 
-        private unsafe List<Gearset> GetGearsets()
+        private unsafe void HandleGearsetState()
         {
-            List<Gearset> gearsets = new List<Gearset>();
+            // Get the gearsets from the player state
+            var gearsets = Features.Gearsets.GetGearsets();
+            if (gearsets == null)
+            {
+                return;
+            }
+
+            // Check if we have any gearsets
+            if (gearsets.Count == 0)
+            {
+                return;
+            }
+
+            // TODO: Send gearset data to the server
+            Service.Log.Debug($"Player has {gearsets.Count} gearsets.");
+        }
+
+        private void GetBluSpells()
+        {
             try
             {
-                var gearsetModule = RaptureGearsetModule.Instance();
-                if (gearsetModule == null)
-                {
-                    return gearsets;
-                }
-
-                // Iterate over all gearsets (0-99)
-                for (int i = 0; i < 99; i++)
-                {
-                    var gearset = gearsetModule->GetGearset(i);
-
-                    if (gearset == null)
-                    {
-                        return gearsets;
-                    }
-
-                    var jobId = gearset->ClassJob;
-                    var itemLevel = (uint)gearset->ItemLevel;
-
-                    // Check if we already have a gearset for this job
-                    if (gearsets.Any(g => g.jobId == jobId))
-                    {
-                        // Compare if the item level is higher
-                        var existingGearset = gearsets.First(g => g.jobId == jobId);
-                        if (existingGearset.itemLevel > itemLevel)
-                        {
-                            continue;
-                        }
-
-                        // Remove the existing gearset
-                        gearsets.Remove(existingGearset);
-                    }
-
-                    // Create a new Gearset object
-                    var gearsetObject = new Gearset
-                    {
-                        jobId = gearset->ClassJob,
-                        itemLevel = (uint)gearset->ItemLevel,
-                    };
-
-                    // Get the items in the gearset
-                    for (int j = 0; j < gearset->Items.Length; j++)
-                    {
-                        var itemData = gearset->Items[j];
-
-                        // Skip empty items (for example, the offhand slot)
-                        if (itemData.ItemId == 0)
-                        {
-                            continue;
-                        }
-
-                        // Create a new Gear object
-                        var item = new Models.Item
-                        {
-                            itemId = itemData.ItemId,
-                        };
-
-                        // Get the materia in the gear
-                        var materiaArray = itemData.Materia;
-                        var materiaGradeArray = itemData.MateriaGrades;
-                        // Materia is a 5 element array ushort*
-                        for (int k = 0; k < 5; k++)
-                        {
-                            // Get the materia
-                            var materia = materiaArray[k];
-                            if (materia == 0)
-                            {
-                                continue;
-                            }
-
-                            var materiaGrade = materiaGradeArray[k];
-
-                            // Create a new Materia object
-                            var materiaObject = new Models.Materia
-                            {
-                                type = materia,
-                                grade = materiaGrade,
-                                slot = (ushort)k,
-                            };
-
-                            // Add the materia to the gear
-                            item.materia.Add(materiaObject);
-                        }
-
-                        // Add the gear to the gearset
-                        gearsetObject.items.Add(item);
-                    }
-
-                    // Add the gearset to the list
-                    gearsets.Add(gearsetObject);
-                }
+                //TODO: Maybe a ref here... https://github.com/DiggityMan420/BluDex/blob/master/BluDex/PluginAddressResolver.cs
             }
             catch (Exception ex)
             {
-                Service.Log.Error(ex, "Failed to get gearsets.");
+                Service.Log.Error(ex, "Failed to get Blue Mage spells.");
             }
-
-            return gearsets;
         }
 
 
@@ -597,6 +398,7 @@ namespace Dalamud.Tomestone
                 }
 
                 // Enrich player achievements with the Lodestone data (timestamps, mostly)
+                /* TODO: FIX THIS
                 foreach (var achievement in player.achievements)
                 {
                     var lodestoneAchievement = achievements.FirstOrDefault(a => a.Id == achievement.id);
@@ -607,47 +409,12 @@ namespace Dalamud.Tomestone
 
                     achievement.timestamp = lodestoneAchievement.TimeAchieved;
                 }
+                */
             }
             catch (Exception ex)
             {
                 // Just don't change the lodestoneId
                 Service.Log.Error(ex, "Failed to get character from Lodestone.");
-            }
-        }
-
-        private async Task SendStreamData(StreamData data)
-        {
-            // TODO: Check this way earlier
-            // Make sure we have a API key
-            if (string.IsNullOrEmpty(plugin.Configuration.DalamudToken))
-            {
-                Service.Log.Error("API key is missing.");
-                return;
-            }
-
-            // Set the API key in the request headers
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", plugin.Configuration.DalamudToken);
-
-            // Serialize the player object to JSON
-            var json = System.Text.Json.JsonSerializer.Serialize(data);
-            // Create a new StringContent with the JSON
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            // URL Encode the Player Name
-            var playerName = Uri.EscapeDataString(player.name.ToLower());
-            // lowercase the world name
-            var worldName = player.world.ToLower();
-            // Build our request URL ("https://www.tomestone.gg/api/dalamud/update-activity/<CHARNAME>/<WORLD>")
-            var url = $"https://tomestone.gg/api/dalamud/update-activity/{playerName}/{worldName}";
-            Service.Log.Debug($"Sending to URL: {url}");
-            // Send the data to the server
-            var response = await httpClient.PostAsync(url, content);
-            // Check if the response was successful
-            if (!response.IsSuccessStatusCode)
-            {
-                Service.Log.Error("Failed to send stream data to the server.");
-                Service.Log.Error($"Response: {response.StatusCode}");
-                return;
             }
         }
 

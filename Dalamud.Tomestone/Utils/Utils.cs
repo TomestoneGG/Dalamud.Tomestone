@@ -1,15 +1,14 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Dalamud.Tomestone.Utils
+namespace Dalamud.Tomestone
 {
     internal static class Utils
     {
+        /// <summary>
+        /// Open a URL in the default browser.
+        /// Supports Windows, Linux, and macOS.
+        /// </summary>
         internal static void OpenUrl(string url)
         {
             try
@@ -36,6 +35,12 @@ namespace Dalamud.Tomestone.Utils
                     throw;
                 }
             }
+        }
+
+        internal static byte ReverseBits(byte b)
+        {
+            b = (byte)((b * 0x0202020202UL & 0x010884422010UL) % 1023);
+            return b;
         }
     }
 }

@@ -122,7 +122,7 @@ namespace Dalamud.Tomestone.UI
             if (ImGui.Button("Claim Character"))
             {
                 // Open "https://tomestone.gg/import/character" in the default browser
-                Utils.Utils.OpenUrl("https://tomestone.gg/import/character");
+                Utils.OpenUrl("https://tomestone.gg/import/character");
             }
             ImGui.Spacing();
             ImGui.TextWrapped($"After you have claimed your character, please click the button below to continue.");
@@ -142,7 +142,7 @@ namespace Dalamud.Tomestone.UI
             if (ImGui.Button("Open Tomestone Account Settings"))
             {
                 // Open "https://tomestone.gg/profile/account" in the default browser
-                Utils.Utils.OpenUrl("https://tomestone.gg/profile/account");
+                Utils.OpenUrl("https://tomestone.gg/profile/account");
             }
             ImGui.Spacing();
             if (ImGui.InputText("Dalamud Access Token", ref dalamudToken, 64, ImGuiInputTextFlags.None))

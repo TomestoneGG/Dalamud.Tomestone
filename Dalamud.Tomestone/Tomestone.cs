@@ -113,8 +113,6 @@ public unsafe class Tomestone : IDalamudPlugin
         // Block if we aren't ingame yet
         if (!Service.ClientState.IsLoggedIn) return;
 
-        // do something when the territory changes
-        Service.Log.Info("Territory changed to {0}", ID);
         try { 
             dataHandler.Update();
         } catch (Exception e) {
