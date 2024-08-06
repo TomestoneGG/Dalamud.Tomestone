@@ -6,10 +6,11 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Dalamud.Tomestone.Windows;
 using System;
+using Dalamud.Tomestone.UI;
 
 namespace Dalamud.Tomestone;
 
-public sealed class Plugin : IDalamudPlugin
+public unsafe class Tomestone : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
@@ -17,31 +18,29 @@ public sealed class Plugin : IDalamudPlugin
 
     public string Name => "Tomestone";
     private const string CommandName = "/ptomestone";
+    internal static Tomestone T = null!;
+
+    internal PluginUI PluginUI;
+    internal FirstLaunchUI FirstLaunchUI;
 
     public Configuration Configuration { get; init; }
 
     public readonly WindowSystem WindowSystem = new("Dalamud.Tomestone");
 
-    private ConfigWindow ConfigWindow { get; init; }
-    private MainWindow MainWindow { get; init; }
-
     internal DataHandler dataHandler;
 
-    public Plugin()
+    public Tomestone()
     {
+        T = this;
 
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         // you might normally want to embed resources and load them from the manifest stream
         var logoPath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "tomestone.png");
 
-        ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, logoPath);
-
-        WindowSystem.AddWindow(ConfigWindow);
-        WindowSystem.AddWindow(MainWindow);
-
         dataHandler = new DataHandler(this);
+
+        PluginUI = new();
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -50,33 +49,51 @@ public sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += DrawUI;
 
-        // This adds a button to the plugin installer entry of this plugin which allows
-        // to toggle the display status of the configuration ui
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
-
         // Adds another button that is doing the same but for the main ui of the plugin
-        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+        PluginInterface.UiBuilder.OpenMainUi += TogglePluginUI;
 
         // Register events for the plugin
         PluginInterface.Create<Service>();
         Service.ClientState.TerritoryChanged += OnTerritoryChanged;
         Service.Framework.Update += OnFrameworkUpdate;
+
+        // Check if we are already logged in
+        if (Service.ClientState.IsLoggedIn)
+        {
+            // If we are already logged in, we can just call the login event
+            OnLogin();
+        }
+        else
+        {
+            // Else we need to wait for the login event
+            Service.ClientState.Login += OnLogin;
+        }
     }
 
     public void Dispose()
     {
+        PluginUI.Dispose();
+
+        WindowSystem.RemoveAllWindows();
+
         // Unregister events for the plugin safely
         try { 
             Service.ClientState.TerritoryChanged -= OnTerritoryChanged;
             Service.Framework.Update -= OnFrameworkUpdate;
+            Service.ClientState.Login -= OnLogin;
         } catch { }
 
-        WindowSystem.RemoveAllWindows();
-
-        ConfigWindow.Dispose();
-        MainWindow.Dispose();
-
         CommandManager.RemoveHandler(CommandName);
+    }
+
+    private void OnLogin()
+    {
+        // If this is the first launch, show the FirstLaunchUI
+        if (Configuration.IsFirstLaunch)
+        {
+            FirstLaunchUI = new FirstLaunchUI();
+            FirstLaunchUI.Toggle();
+        }
     }
 
     private void OnFrameworkUpdate(IFramework framework)
@@ -96,8 +113,6 @@ public sealed class Plugin : IDalamudPlugin
         // Block if we aren't ingame yet
         if (!Service.ClientState.IsLoggedIn) return;
 
-        // do something when the territory changes
-        Service.Log.Info("Territory changed to {0}", ID);
         try { 
             dataHandler.Update();
         } catch (Exception e) {
@@ -108,11 +123,10 @@ public sealed class Plugin : IDalamudPlugin
     private void OnCommand(string command, string args)
     {
         // in response to the slash command, just toggle the display status of our main ui
-        ToggleMainUI();
+        TogglePluginUI();
     }
 
     private void DrawUI() => WindowSystem.Draw();
 
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => MainWindow.Toggle();
+    public void TogglePluginUI() => PluginUI.Toggle();
 }
