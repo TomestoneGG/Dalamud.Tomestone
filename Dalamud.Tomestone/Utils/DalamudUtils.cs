@@ -71,9 +71,6 @@ namespace Dalamud.Tomestone
             var materiaGradeArray = slot->MateriaGrades;
             // Materia is a 5 element array ushort*
             for (int j = 0; j < materiaArray.Length; j++) {
-
-                
-
                 // Get the materia
                 var materia = materiaArray[j];
                 if (materia == 0)
@@ -87,7 +84,7 @@ namespace Dalamud.Tomestone
 
                 item.materia.Add(new Materia
                 {
-                    id = GetMateriaID(materia, materiaGrade),
+                    name = GetMateriaName(materia, materiaGrade),
                     slot = (ushort)j,
                 });
             }
@@ -125,6 +122,31 @@ namespace Dalamud.Tomestone
                 throw new Exception("Failed to get materia ID");
             }
             return materiaID.RowId;
+        }
+
+        internal static string GetMateriaName(uint materiaType, uint grade)
+        {
+            var materiaSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Materia>(Game.ClientLanguage.English);
+            if (materiaSheet == null)
+            {
+                throw new Exception("Failed to get materia sheet");
+            }
+            var materiaTypeRow = materiaSheet.GetRow(materiaType);
+            if (materiaTypeRow == null)
+            {
+                throw new Exception("Failed to get materia type row");
+            }
+            var materiaGradeItem = materiaTypeRow?.Item[grade];
+            if (materiaGradeItem == null)
+            {
+                throw new Exception("Failed to get materia grade item");
+            }
+            var materiaID = materiaGradeItem.Value;
+            if (materiaID == null)
+            {
+                throw new Exception("Failed to get materia ID");
+            }
+            return materiaID.Name;
         }
 
         /// <summary>

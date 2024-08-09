@@ -31,7 +31,7 @@ namespace Dalamud.Tomestone.Models
 
     internal class Materia
     {
-        public uint id { get; set; } = 0;
+        public string name { get; set; } = string.Empty;
         public ushort slot { get; set; } = 0;
     }
 

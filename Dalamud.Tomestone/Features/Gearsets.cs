@@ -142,7 +142,7 @@ namespace Dalamud.Tomestone.Features
                             // Create a new Materia object
                             var materiaObject = new Models.Materia
                             {
-                                id = DalamudUtils.GetMateriaID(materia, materiaGrade),
+                                name = DalamudUtils.GetMateriaName(materia, materiaGrade),
                                 slot = (ushort)k,
                             };
 
