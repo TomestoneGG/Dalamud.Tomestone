@@ -41,6 +41,7 @@ public unsafe class Tomestone : IDalamudPlugin
         dataHandler = new DataHandler(this);
 
         PluginUI = new();
+        FirstLaunchUI = new();
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -91,7 +92,6 @@ public unsafe class Tomestone : IDalamudPlugin
         // If this is the first launch, show the FirstLaunchUI
         if (Configuration.IsFirstLaunch)
         {
-            FirstLaunchUI = new FirstLaunchUI();
             FirstLaunchUI.Toggle();
         }
     }

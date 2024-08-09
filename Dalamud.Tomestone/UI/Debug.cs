@@ -52,6 +52,20 @@ namespace Dalamud.Tomestone.UI
                     Tomestone.T.Configuration.Save();
                 }
             }
+
+            // TODO: Add more debug actions here
+            if (ImGui.CollapsingHeader("Debug Actions"))
+            {
+                if (ImGui.Button("Send Test Activity"))
+                {
+                    //Tomestone.T.dataHandler....
+                }
+                ImGui.Separator();
+                if (ImGui.Button("Send Test Gear"))
+                {
+                    //Tomestone.T.SendTestGear();
+                }
+            }
         }
     }
 }

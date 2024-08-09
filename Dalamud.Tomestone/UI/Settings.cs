@@ -16,6 +16,7 @@ namespace Dalamud.Tomestone.UI
             string dalamudToken = Tomestone.T.Configuration.DalamudToken;
 
             bool sendActivity = Tomestone.T.Configuration.SendActivity;
+            bool sendGear = Tomestone.T.Configuration.SendGear;
 
             ImGui.TextWrapped($"Here you can change some settings Tomestone will use.");
             ImGui.TextWrapped($"In order to use Tomestone, please claim your character and set your Dalamud access token first!");
@@ -23,7 +24,7 @@ namespace Dalamud.Tomestone.UI
 
             if (ImGui.CollapsingHeader("General Settings"))
             {
-                if (ImGui.Checkbox("Send character data to Tomestone.gg", ref enabled))
+                if (ImGui.Checkbox("Send data to Tomestone.gg", ref enabled))
                 {
                     Tomestone.T.Configuration.Enabled = enabled;
                     Tomestone.T.Configuration.Save();
@@ -40,17 +41,27 @@ namespace Dalamud.Tomestone.UI
                 ImGuiComponents.HelpMarker("This is your Dalamud access token. You can generate it in the Tomestone settings under the 'Dalamud access token' section.");
             }
 
-            if (ImGui.CollapsingHeader("Data Settings"))
+            if (Tomestone.T.Configuration.Enabled && !string.IsNullOrEmpty(Tomestone.T.Configuration.DalamudToken))
             {
-                ImGui.TextWrapped("Here you can change some settings regarding the data Tomestone will send.");
-                ImGui.Separator();
-
-                if (ImGui.Checkbox("Send activity data to Tomestone.gg", ref sendActivity))
+                if (ImGui.CollapsingHeader("Data Settings"))
                 {
-                    Tomestone.T.Configuration.SendActivity = sendActivity;
-                    Tomestone.T.Configuration.Save();
+                    ImGui.TextWrapped("Here you can change some settings regarding the data Tomestone will send.");
+                    ImGui.Separator();
+
+                    if (ImGui.Checkbox("Send activity data to Tomestone.gg", ref sendActivity))
+                    {
+                        Tomestone.T.Configuration.SendActivity = sendActivity;
+                        Tomestone.T.Configuration.Save();
+                    }
+                    ImGuiComponents.HelpMarker("If enabled, Tomestone will send your activity data to Tomestone.gg. This includes your current job, level, zone and if you are traveling to another world.");
+
+                    if (ImGui.Checkbox("Send gear data to Tomestone.gg", ref sendGear))
+                    {
+                        Tomestone.T.Configuration.SendGear = sendGear;
+                        Tomestone.T.Configuration.Save();
+                    }
+                    ImGuiComponents.HelpMarker("If enabled, Tomestone will send your gear data to Tomestone.gg.");
                 }
-                ImGuiComponents.HelpMarker("If enabled, Tomestone will send your activity data to Tomestone.gg. This includes your current job, level, zone and if you are traveling to another world.");
             }
         }
     }

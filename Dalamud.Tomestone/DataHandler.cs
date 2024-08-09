@@ -1,3 +1,4 @@
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Tomestone.API;
 using Dalamud.Tomestone.Models;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -7,8 +8,10 @@ using NetStone;
 using NetStone.Model.Parseables.Character.Achievement;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone
@@ -110,6 +113,9 @@ namespace Dalamud.Tomestone
             // Check for changes in the player state and send if needed
             HandlePlayerState(playerData);
 
+            // Update all data that might change frequently (this isn't in the 30 minute update check)
+            HandleGearState(localPlayer);
+
             // Check if the last update was less than 30 minutes ago
             if (DateTime.Now - status.lastUpdate < TimeSpan.FromMinutes(30))
             {
@@ -131,9 +137,9 @@ namespace Dalamud.Tomestone
 
             HandleAchievementState();
 
-            HandleFishState();
+            HandleFishState();         
 
-            HandleGearsetState();
+            // HandleGearsetState();
 
             //// Check if we have a lodestone ID, if not, get it
             //if (player != null && player.lodestoneId == 0)
@@ -186,7 +192,7 @@ namespace Dalamud.Tomestone
                 changed = true;
             }
 
-            if (changed)
+            if (changed && this.plugin.Configuration.SendActivity)
             {
                 var activity = new ActivityDTO
                 {
@@ -293,6 +299,24 @@ namespace Dalamud.Tomestone
 
             // TODO: Send fish data to the server
             Service.Log.Debug($"Player has catched {fish.Count} fish.");
+        }
+
+        private unsafe void HandleGearState(IPlayerCharacter localPlayer)
+        {
+            if (this.plugin.Configuration.Enabled == false || this.plugin.Configuration.SendGear == false)
+            {
+                return;
+            }
+
+            // Get the gearsets from the player state
+            var gear = Features.Gear.GetGear(localPlayer);
+            if (gear == null)
+            {
+                return;
+            }
+
+            // Send gear data to the server
+            var apiTask = Task.Run(() => api.SendGear(player.name, player.world, gear));
         }
 
         private unsafe void HandleGearsetState()

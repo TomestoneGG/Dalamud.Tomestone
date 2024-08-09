@@ -168,6 +168,7 @@ namespace Dalamud.Tomestone.UI
         private void DrawSettings()
         {
             bool sendActivity = Tomestone.T.Configuration.SendActivity;
+            bool sendGear = Tomestone.T.Configuration.SendGear;
 
             ImGui.TextWrapped($"Before we finish, check which data you want to send to {Tomestone.T.Name}.");
             ImGui.Separator();
@@ -178,6 +179,13 @@ namespace Dalamud.Tomestone.UI
                 Tomestone.T.Configuration.Save();
             }
             ImGuiComponents.HelpMarker("If enabled, Tomestone will send your activity data to Tomestone.gg. This includes your current job, level, zone and if you are traveling to another world.");
+
+            if (ImGui.Checkbox("Send gear data to Tomestone.gg", ref sendGear))
+            {
+                Tomestone.T.Configuration.SendGear = sendGear;
+                Tomestone.T.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("If enabled, Tomestone will send your current gear data to Tomestone.gg.");
 
             ImGui.Separator();
             if (ImGui.Button("Finish"))

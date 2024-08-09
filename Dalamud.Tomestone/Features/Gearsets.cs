@@ -114,8 +114,8 @@ namespace Dalamud.Tomestone.Features
                         }
 
                         // Check if the item has dyes
-                        item.dye1 = itemData.Stain0Id;
-                        item.dye2 = itemData.Stain1Id;
+                        item.dye1 = DalamudUtils.GetDyeName(itemData.Stain0Id);
+                        item.dye2 = DalamudUtils.GetDyeName(itemData.Stain1Id);
 
                         // Get the materia in the gear
                         var materiaArray = itemData.Materia;
@@ -142,9 +142,7 @@ namespace Dalamud.Tomestone.Features
                             // Create a new Materia object
                             var materiaObject = new Models.Materia
                             {
-                                materiaType = materia,
-                                type = (Models.MateriaType)materia,
-                                grade = (uint)materiaGrade + 1,
+                                id = DalamudUtils.GetMateriaID(materia, materiaGrade),
                                 slot = (ushort)k,
                             };
 
