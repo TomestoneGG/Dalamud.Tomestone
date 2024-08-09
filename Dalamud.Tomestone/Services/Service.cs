@@ -11,5 +11,6 @@ namespace Dalamud.Tomestone
         [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
         [PluginService] internal static IFramework Framework { get; private set; } = null!;
         [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
+        [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
     }
 }
