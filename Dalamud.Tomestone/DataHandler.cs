@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone
@@ -83,8 +84,21 @@ namespace Dalamud.Tomestone
                 return;
             }
 
-            // Check if the job or level changed
-            if (player.currentJobId != (uint)currentJob.RowId || player.currentJobLevel != (uint)localPlayer.Level)
+            if (!plugin.Configuration.TokenChecked)
+            {
+                if (plugin.Configuration.DalamudToken == null || plugin.Configuration.DalamudToken == "")
+                {
+                    return;
+                }
+                Service.Log.Info("Token not checked, checking now.");
+
+                GetPlayerState();
+                GetUIState();
+                // Check if the token is valid by sending activity data
+                var playerData = Features.Player.GetCharacterInfo(localPlayer);
+                HandleTokenChange(playerData);
+            }
+            else if (player.currentJobId != (uint)currentJob.RowId || player.currentJobLevel != (uint)localPlayer.Level)
             {
                 GetPlayerState();
                 GetUIState();
@@ -94,6 +108,8 @@ namespace Dalamud.Tomestone
                 // Check for changes in the player state and send if needed
                 HandlePlayerState(playerData);
             }
+
+
 
             // Check if an update was requested
             if (updateRequested)
@@ -145,7 +161,7 @@ namespace Dalamud.Tomestone
 
             HandleAchievementState();
 
-            HandleFishState();         
+            HandleFishState();
 
             // HandleGearsetState();
 #endif
@@ -173,27 +189,44 @@ namespace Dalamud.Tomestone
             }
         }
 
-        private void DoRequest(Func<Task<APIError?>> request)
+        //private void DoRequest(Func<Task<APIError?>> request)
+        //{
+        //    var task = Task.Run(async () =>
+        //    {
+        //        try
+        //        {
+        //            var error = await request();
+        //            if (error != null)
+        //            {
+        //                Service.Log.Error(error.ErrorMessage);
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Service.Log.Error(ex, "Failed to update data.");
+        //        }
+        //        finally
+        //        {
+        //            // Clean up
+        //        }
+        //    });
+        //}
+
+        // This exists so we can handle if the token changed and give some feedback to the user
+        private unsafe void HandleTokenChange(Models.Player newPlayer)
         {
-            var task = Task.Run(async () =>
+            // We do the same as in HandlePlayerState, but we don't care if the data changed or not
+            this.player = newPlayer;
+            var activity = new ActivityDTO
             {
-                try
-                {
-                    var error = await request();
-                    if (error != null)
-                    {
-                        Service.Log.Error(error.ErrorMessage);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Service.Log.Error(ex, "Failed to update data.");
-                }
-                finally
-                {
-                    // Clean up
-                }
-            });
+                jobId = newPlayer.currentJobId,
+                jobLevel = newPlayer.currentJobLevel,
+                territoryId = newPlayer.currentZoneId,
+                currentWorld = newPlayer.currentWorldName,
+            };
+
+            // Send the stream data to the server, this is a fire and forget operation so we don't await it
+            api.DoRequest(() => api.SendActivity(player.name, player.world, activity));
         }
 
         // Handles base player data and activity data
@@ -223,7 +256,7 @@ namespace Dalamud.Tomestone
                     currentWorld = newPlayer.currentWorldName,
                 };
                 // Send the stream data to the server, this is a fire and forget operation so we don't await it
-                DoRequest(() => api.SendActivity(player.name, player.world, activity));
+                api.DoRequest(() => api.SendActivity(player.name, player.world, activity));
             }
         }
 
@@ -248,7 +281,8 @@ namespace Dalamud.Tomestone
 
         private unsafe void HandleTripleTriadState()
         {
-            try {                 
+            try
+            {
                 // Get the triple triad cards from the player state
                 var cards = Features.TripleTriad.GetTripleTriadCards(this.uiState);
 
@@ -262,7 +296,8 @@ namespace Dalamud.Tomestone
 
         private unsafe void HandleOrchestrionState()
         {
-            try {
+            try
+            {
                 // Get the orchestrion rolls from the player state
                 var rolls = Features.Orchestrion.GetOrchestrionRolls(this.playerState);
 
@@ -380,7 +415,7 @@ namespace Dalamud.Tomestone
             }
 
             // Send gear data to the server
-            DoRequest(() => api.SendGear(player.name, player.world, gear));
+            api.DoRequest(() => api.SendGear(player.name, player.world, gear));
         }
 
         private unsafe void HandleGearsetState()

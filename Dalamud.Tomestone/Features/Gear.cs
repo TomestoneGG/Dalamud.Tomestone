@@ -9,7 +9,7 @@ namespace Dalamud.Tomestone.Features
 {
     internal static class Gear
     {
-        private static unsafe List<Models.Attribute>? GetAttributes(Gearset gear, PlayerState* playerState)
+        private static unsafe List<Models.Attribute> GetAttributes(Gearset gear, PlayerState* playerState)
         {
             var attributes = new List<Models.Attribute>();
 
@@ -79,7 +79,8 @@ namespace Dalamud.Tomestone.Features
 
                 // Grab the player's current gear (in a loop going through the ItemSlot enum)
                 var lastSlot = Enum.GetValues(typeof(ItemSlot)).Cast<ItemSlot>().Last();
-                for (int i = 0; i < (int)lastSlot; i++)
+                bool hasShield = false;
+                for (int i = 0; i <= (int)lastSlot; i++)
                 {
                     try
                     {
@@ -87,6 +88,11 @@ namespace Dalamud.Tomestone.Features
                         if (item == null)
                         {
                             continue;
+                        }
+
+                        if (item.slot == ItemSlot.OffHand)
+                        {
+                            hasShield = true;
                         }
 
                         // Add the item to the gearset
@@ -97,6 +103,24 @@ namespace Dalamud.Tomestone.Features
                         // Its possible that there is no item equipped in a slot
                         Service.Log.Verbose($"Failed to get item for slot {i}");
                     }
+                }
+
+                // If we have a shield, ensure it's added in the correct place (after feet)
+                if (hasShield)
+                {
+                    var tempItems = new List<Item>();
+                    var correctSlots = new List<ItemSlot> { ItemSlot.MainHand, ItemSlot.Head, ItemSlot.Body, ItemSlot.Hands, ItemSlot.Legs, ItemSlot.Feet, ItemSlot.OffHand, ItemSlot.Ears, ItemSlot.Neck, ItemSlot.Wrists, ItemSlot.LeftRing, ItemSlot.RightRing, ItemSlot.Crystals };
+                    // Add the items in the correct order
+                    foreach ( var slot in correctSlots)
+                    {
+                        var item = gear.items.Find(x => x.slot == slot);
+                        if (item != null)
+                        {
+                            tempItems.Add(item);
+                        }
+                    }
+
+                    gear.items = tempItems;
                 }
 
                 // Calculate the average item level
@@ -137,7 +161,8 @@ namespace Dalamud.Tomestone.Features
                     }
                     else
                     {
-                        iLvls.Add(gearset.items[i].itemLevel);
+                        if (gearset.items[i].slot != ItemSlot.Crystals)
+                            iLvls.Add(gearset.items[i].itemLevel);
                     }
                 }
             }
@@ -145,7 +170,8 @@ namespace Dalamud.Tomestone.Features
             {
                 for (int i = 0; i < gearset.items.Count; i++)
                 {
-                    iLvls.Add(gearset.items[i].itemLevel);
+                    if (gearset.items[i].slot != ItemSlot.Crystals)
+                        iLvls.Add(gearset.items[i].itemLevel);
                 }
             }
 

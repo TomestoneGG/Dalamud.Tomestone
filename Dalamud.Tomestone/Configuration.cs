@@ -13,6 +13,9 @@ public class Configuration : IPluginConfiguration
     public bool IsFirstLaunch { get; set; } = true;
 
     public string DalamudToken { get; set; } = string.Empty;
+    public bool TokenChecked { get; set; } = false;
+    public bool TokenValid { get; set; } = false;
+    public bool CharacterClaimed { get; set; } = false;
 
     // Enables/Disables all data sending to tomestone.gg
     public bool Enabled { get; set; } = true;

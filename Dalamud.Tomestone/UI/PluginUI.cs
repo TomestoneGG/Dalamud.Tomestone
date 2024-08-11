@@ -24,7 +24,7 @@ namespace Dalamud.Tomestone.UI
             this.RespectCloseHotkey = false;
             this.SizeConstraints = new()
             {
-                MinimumSize = new(250, 100),
+                MinimumSize = new(750, 500),
                 MaximumSize = new(9999, 9999)
             };
             Tomestone.T.WindowSystem.AddWindow(this);
