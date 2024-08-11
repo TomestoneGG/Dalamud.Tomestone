@@ -50,7 +50,7 @@ namespace Dalamud.Tomestone.API
 
             // Setup the User-Agent (Dalamud/PluginVersion)
             this.client.DefaultRequestHeaders.UserAgent.Clear();
-            this.client.DefaultRequestHeaders.UserAgent.ParseAdd($"Dalamud/{Configuration.VersionString}");
+            this.client.DefaultRequestHeaders.UserAgent.ParseAdd($"Dalamud.Tomestone/{Configuration.VersionString}");
 
             return null;
         }
@@ -84,12 +84,15 @@ namespace Dalamud.Tomestone.API
             // Build the URL
             var url = string.Format(ACTIVITY_ENDPOINT, API_URL, playerName, worldName);
 
-            // Send the request
-            var response = await this.client.PostAsync(url, content);
-            if (!response.IsSuccessStatusCode)
-            {
-                return new APIError { IsError = true, ErrorMessage = $"Failed to send activity data ({response.StatusCode})" };
-            }
+#if DEBUG
+            Service.Log.Debug($"POST {url}: {json}");
+#endif
+            //// Send the request
+            //var response = await this.client.PostAsync(url, content);
+            //if (!response.IsSuccessStatusCode)
+            //{
+            //    return new APIError { IsError = true, ErrorMessage = $"Failed to send activity data ({response.StatusCode})" };
+            //}
 
             return null;
         }
@@ -123,12 +126,15 @@ namespace Dalamud.Tomestone.API
             // Build the URL
             var url = string.Format(GEAR_ENDPOINT, API_URL, playerName, worldName);
 
-            // Send the request
-            var response = await this.client.PostAsync(url, content);
-            if (!response.IsSuccessStatusCode)
-            {
-                return new APIError { IsError = true, ErrorMessage = $"Failed to send gear data ({response.StatusCode})" };
-            }
+#if DEBUG
+            Service.Log.Debug($"POST {url}: {json}");
+#endif
+            ////Send the request
+            //var response = await this.client.PostAsync(url, content);
+            //if (!response.IsSuccessStatusCode)
+            //{
+            //    return new APIError { IsError = true, ErrorMessage = $"Failed to send gear data ({response.StatusCode})" };
+            //}
 
             return null;
         }

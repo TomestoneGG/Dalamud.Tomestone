@@ -2,16 +2,12 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Tomestone.API;
 using Dalamud.Tomestone.Models;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Lumina.Excel.GeneratedSheets;
 using NetStone;
 using NetStone.Model.Parseables.Character.Achievement;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone
@@ -38,6 +34,7 @@ namespace Dalamud.Tomestone
         private Tomestone plugin; // Reference to the plugin
 
         private DateTime lastHandledFrameworkUpdate = DateTime.MinValue;
+        private bool updateRequested = false;
 
         internal unsafe PlayerState* playerState;
         internal unsafe UIState* uiState;
@@ -54,11 +51,16 @@ namespace Dalamud.Tomestone
 
             // Initialize the player object
             player = new Player();
-            // Initialize the lodestone client in the background
+            // Initialize the lodestone client in the background//Hopefully this will be removed in the future
             var clientTask = Task.Run(() => InitLodestoneCient());
         }
 
-        public async void HandleFrameworkUpdate()
+        public void ScheduleUpdate()
+        {
+            updateRequested = true;
+        }
+
+        public void HandleFrameworkUpdate(IPlayerCharacter localPlayer)
         {
             // Check if the last update was less than 5 seconds ago
             if (DateTime.Now - lastHandledFrameworkUpdate < TimeSpan.FromSeconds(5))
@@ -69,40 +71,40 @@ namespace Dalamud.Tomestone
             lastHandledFrameworkUpdate = DateTime.Now;
 
             // Check if the player is in a loading screen
-            if (Service.ClientState.LocalPlayer == null)
+            if (localPlayer == null)
             {
                 return;
             }
 
             // Grab the players current job and level, if it's different from the last update, send the data
-            var currentJob = Service.ClientState.LocalPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
+            var currentJob = localPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
             if (currentJob == null)
             {
                 return;
             }
 
             // Check if the job or level changed
-            if (player.currentJobId != (uint)currentJob.RowId || player.currentJobLevel != (uint)Service.ClientState.LocalPlayer.Level)
+            if (player.currentJobId != (uint)currentJob.RowId || player.currentJobLevel != (uint)localPlayer.Level)
             {
                 GetPlayerState();
                 GetUIState();
                 // Grab character name, job, level territory and traveling data to send to the backend
-                var playerData = Features.Player.GetCharacterInfo(Service.ClientState.LocalPlayer);
+                var playerData = Features.Player.GetCharacterInfo(localPlayer);
 
                 // Check for changes in the player state and send if needed
                 HandlePlayerState(playerData);
             }
+
+            // Check if an update was requested
+            if (updateRequested)
+            {
+                updateRequested = false;
+                Update(localPlayer);
+            }
         }
 
-        public async void Update()
+        public void Update(IPlayerCharacter localPlayer)
         {
-            // Defer getting the local player in a retrying loop, since it's null in a loading screen
-            var localPlayer = await Features.Player.GetLocalPlayer(5000);
-            if (localPlayer == null)
-            {
-                Service.Log.Error("Failed to get local player.");
-                return;
-            }
 
             GetPlayerState();
             GetUIState();
@@ -129,6 +131,12 @@ namespace Dalamud.Tomestone
             // If yes, we can update the whole character data
             //Service.Log.Info("Updating character data.");
 
+            HandleTripleTriadState();
+
+            HandleOrchestrionState();
+
+            HandleBlueMageState();
+
             HandleJobState();
 
             HandleMountState();
@@ -140,16 +148,6 @@ namespace Dalamud.Tomestone
             HandleFishState();         
 
             // HandleGearsetState();
-
-            //// Check if we have a lodestone ID, if not, get it
-            //if (player != null && player.lodestoneId == 0)
-            //{
-
-            //    await GetCharacterFromLodestone();
-
-            //    // TODO: Update the character data in the backend
-            //    await SendCharacterData();
-            //}
 #endif
             // Set the last update time to now
             status.lastUpdate = DateTime.Now;
@@ -173,6 +171,29 @@ namespace Dalamud.Tomestone
                 // Throw an exception if the UI state is null
                 throw new Exception("Failed to get UI state.");
             }
+        }
+
+        private void DoRequest(Func<Task<APIError?>> request)
+        {
+            var task = Task.Run(async () =>
+            {
+                try
+                {
+                    var error = await request();
+                    if (error != null)
+                    {
+                        Service.Log.Error(error.ErrorMessage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Service.Log.Error(ex, "Failed to update data.");
+                }
+                finally
+                {
+                    // Clean up
+                }
+            });
         }
 
         // Handles base player data and activity data
@@ -202,7 +223,7 @@ namespace Dalamud.Tomestone
                     currentWorld = newPlayer.currentWorldName,
                 };
                 // Send the stream data to the server, this is a fire and forget operation so we don't await it
-                var streamTask = Task.Run(() => api.SendActivity(player.name, player.world, activity));
+                DoRequest(() => api.SendActivity(player.name, player.world, activity));
             }
         }
 
@@ -223,6 +244,49 @@ namespace Dalamud.Tomestone
 
             // TODO: Send job data to the server
             Service.Log.Debug($"Player has {jobs.Count} jobs.");
+        }
+
+        private unsafe void HandleTripleTriadState()
+        {
+            try {                 
+                // Get the triple triad cards from the player state
+                var cards = Features.TripleTriad.GetTripleTriadCards(this.uiState);
+
+                Service.Log.Debug($"Player has {cards.Count} Triple Triad cards.");
+            }
+            catch (Exception ex)
+            {
+                Service.Log.Error(ex, "Failed to get Triple Triad cards.");
+            }
+        }
+
+        private unsafe void HandleOrchestrionState()
+        {
+            try {
+                // Get the orchestrion rolls from the player state
+                var rolls = Features.Orchestrion.GetOrchestrionRolls(this.playerState);
+
+                Service.Log.Debug($"Player has {rolls.Count} Orchestrion rolls.");
+            }
+            catch (Exception ex)
+            {
+                Service.Log.Error(ex, "Failed to get Orchestrion rolls.");
+            }
+        }
+
+        private unsafe void HandleBlueMageState()
+        {
+            try
+            {
+                // Get the blue mage spells from the player state
+                var spells = Features.BlueMage.CheckLearnedSpells();
+
+                Service.Log.Debug($"Player has {spells.Count} Blue Mage spells.");
+            }
+            catch (Exception ex)
+            {
+                Service.Log.Error(ex, "Failed to get Blue Mage spells.");
+            }
         }
 
         private unsafe void HandleMountState()
@@ -309,14 +373,14 @@ namespace Dalamud.Tomestone
             }
 
             // Get the gearsets from the player state
-            var gear = Features.Gear.GetGear(localPlayer);
+            var gear = Features.Gear.GetGear(localPlayer, this.playerState);
             if (gear == null)
             {
                 return;
             }
 
             // Send gear data to the server
-            var apiTask = Task.Run(() => api.SendGear(player.name, player.world, gear));
+            DoRequest(() => api.SendGear(player.name, player.world, gear));
         }
 
         private unsafe void HandleGearsetState()
@@ -439,35 +503,6 @@ namespace Dalamud.Tomestone
             {
                 // Just don't change the lodestoneId
                 Service.Log.Error(ex, "Failed to get character from Lodestone.");
-            }
-        }
-
-        private async Task SendCharacterData()
-        {
-            // Safeguard against a missing lodestone ID
-            if (player.lodestoneId == 0)
-            {
-                Service.Log.Error("Character data is missing the Lodestone ID.");
-                return;
-            }
-
-            try
-            {
-                // TODO: Send data
-
-                // Fake await to simulate the request
-                await Task.Delay(1000);
-
-                // Set the last update time to now
-                status.UpdateError = false;
-                status.lastUpdate = DateTime.Now;
-                status.UpdateMessage = "Character data sent to the server.";
-            }
-            catch (Exception ex)
-            {
-                status.UpdateError = true;
-                status.UpdateMessage = "Failed to send character data to the server.";
-                Service.Log.Error(ex, "Failed to send character data to the server.");
             }
         }
     }
