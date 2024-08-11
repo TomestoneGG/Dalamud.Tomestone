@@ -8,7 +8,7 @@ namespace Dalamud.Tomestone.Models
     {
         public uint jobId { get; set; } = 0;
         public uint itemLevel { get; set; } = 0;
-        public List<Attribute> attributes { get; set; } = null;
+        public List<Attribute> attributes { get; set; } = new List<Attribute>();
         public List<Item> items { get; set; } = new List<Item>();
     }
 
