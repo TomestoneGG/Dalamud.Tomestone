@@ -22,7 +22,13 @@ jobs:
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile ./latest.zip
-          Expand-Archive -Path ./latest.zip ./dalamud
+          - name: Setup Dalamud
+            shell: pwsh
+            run: |
+              Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile ./latest.zip
+              Expand-Archive -Path ./latest.zip ./dalamud
+              Expand-Archive -Path ./latest.zip -DestinationPath $env:APPDATA\xivlauncher\Addon\Hooks\dev
+
 
       - name: Restore project dependencies
         run: dotnet restore --verbosity normal
