@@ -41,6 +41,7 @@ public unsafe class Tomestone : IDalamudPlugin
         dataHandler = new DataHandler(this);
 
         PluginUI = new();
+        FirstLaunchUI = new();
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -91,7 +92,6 @@ public unsafe class Tomestone : IDalamudPlugin
         // If this is the first launch, show the FirstLaunchUI
         if (Configuration.IsFirstLaunch)
         {
-            FirstLaunchUI = new FirstLaunchUI();
             FirstLaunchUI.Toggle();
         }
     }
@@ -100,9 +100,12 @@ public unsafe class Tomestone : IDalamudPlugin
     {
         if (!Service.ClientState.IsLoggedIn) return;
 
+        // Grab the local player
+        var localPlayer = Service.ClientState.LocalPlayer;
+
         // Polling the framework is required to know if we had a ClassJob change
         try { 
-            dataHandler.HandleFrameworkUpdate();
+            dataHandler.HandleFrameworkUpdate(localPlayer);
         } catch (Exception e) {
             Service.Log.Error(e, "Failed to handle framework update");
         }
@@ -113,8 +116,9 @@ public unsafe class Tomestone : IDalamudPlugin
         // Block if we aren't ingame yet
         if (!Service.ClientState.IsLoggedIn) return;
 
-        try { 
-            dataHandler.Update();
+        try {
+            // dataHandler.Update();
+            dataHandler.ScheduleUpdate();
         } catch (Exception e) {
             Service.Log.Error(e, "Failed to update data handler");
         }

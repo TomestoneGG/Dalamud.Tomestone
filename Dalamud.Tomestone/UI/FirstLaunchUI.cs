@@ -3,7 +3,6 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
-using System.Diagnostics;
 using System.Numerics;
 
 namespace Dalamud.Tomestone.UI
@@ -63,8 +62,6 @@ namespace Dalamud.Tomestone.UI
                         ImGui.Selectable("Dalamud Token", onboardingStep == OnboardingStep.DalamudToken, ImGuiSelectableFlags.SpanAllColumns);
                         ImGui.Spacing();
                         ImGui.Selectable("Settings", onboardingStep == OnboardingStep.Settings, ImGuiSelectableFlags.SpanAllColumns);
-                        ImGui.Spacing();
-                        ImGui.Selectable("Finish", onboardingStep == OnboardingStep.Finish, ImGuiSelectableFlags.SpanAllColumns);
                     }
 
                     ImGui.PopStyleVar();
@@ -116,9 +113,16 @@ namespace Dalamud.Tomestone.UI
 
         private void DrawCharacterClaim()
         {
-            ImGui.TextWrapped($"In order to use the {Tomestone.T.Name} plugin, you need to create an account and claim your character on Tomestone.gg.");
-            ImGui.TextWrapped($"Please click the button below to claim your character now.");
+            ImGui.TextWrapped($"To use the {Tomestone.T.Name} plugin, you need to create a Tomestone.gg account and claim your character.");
+            ImGui.TextWrapped($"Please click the button below to create your account and claim your character now.");
             ImGui.Spacing();
+
+            if (ImGui.Button("Create Account"))
+            {
+                // Open "https://tomestone.gg/register" in the default browser
+                Utils.OpenUrl("https://tomestone.gg/register");
+            }
+
             if (ImGui.Button("Claim Character"))
             {
                 // Open "https://tomestone.gg/import/character" in the default browser
@@ -136,7 +140,7 @@ namespace Dalamud.Tomestone.UI
         {
             string dalamudToken = Tomestone.T.Configuration.DalamudToken;
 
-            ImGui.TextWrapped($"In order to verify it is you sending the data, we need you to set a Dalamud access token.");
+            ImGui.TextWrapped($"In order to connect the plugin to your Tomestone account, we need you to set a Dalamud access token.");
             ImGui.TextWrapped($"You can obtain this token on your account settings page on Tomestone.gg. Click the Button below to open that Page and scroll down to \"Dalamud access token\".");
             ImGui.TextWrapped($"Press the \"Generate access token\" button, copy the token and paste it into the field below.");
             if (ImGui.Button("Open Tomestone Account Settings"))
@@ -148,6 +152,9 @@ namespace Dalamud.Tomestone.UI
             if (ImGui.InputText("Dalamud Access Token", ref dalamudToken, 64, ImGuiInputTextFlags.None))
             {
                 Tomestone.T.Configuration.DalamudToken = dalamudToken;
+                Tomestone.T.Configuration.TokenChecked = false;
+                Tomestone.T.Configuration.TokenValid = false;
+                Tomestone.T.Configuration.CharacterClaimed = false;
                 Tomestone.T.Configuration.Save();
             }
             ImGui.Spacing();
@@ -158,16 +165,64 @@ namespace Dalamud.Tomestone.UI
             }
             else
             {
-                if (ImGui.Button("Next"))
+                // Check if the token is still being checked
+                if (!Tomestone.T.Configuration.TokenChecked)
                 {
-                    this.onboardingStep = OnboardingStep.Settings;
+                    // Set the text color to yellow
+                    ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1, 1, 0, 1));
+                    ImGui.TextWrapped($"Please wait while we check your token...");
+                    ImGui.PopStyleColor();
                 }
+                else
+                {
+                    // Check if the token is valid
+                    if (Tomestone.T.Configuration.TokenValid && Tomestone.T.Configuration.CharacterClaimed)
+                    {
+                        // Set the text color to green
+                        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0, 1, 0, 1));
+                        ImGui.TextWrapped($"Your token is valid! You can now continue.");
+                        ImGui.PopStyleColor();
+                        if (ImGui.Button("Next"))
+                        {
+                            this.onboardingStep = OnboardingStep.Settings;
+                        }
+                    }
+                    else
+                    {
+                        var errorText = Tomestone.T.Configuration.CharacterClaimed ? $"Your token is invalid. Please check if you copied it correctly." : $"Your character is not claimed on Tomestone.gg. Please claim it first - press Refresh after claiming it!";
+
+                        // Set the text color to red
+                        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1, 0, 0, 1));
+                        ImGui.TextWrapped(errorText);
+                        ImGui.PopStyleColor();
+
+                        if (!Tomestone.T.Configuration.CharacterClaimed)
+                        {
+                            if (ImGui.Button("Claim Character"))
+                            {
+                                // Open "https://tomestone.gg/import/character" in the default browser
+                                Utils.OpenUrl("https://tomestone.gg/import/character");
+                            }
+
+                            if (ImGui.Button("Refresh"))
+                            {
+                                Tomestone.T.Configuration.TokenChecked = false;
+                                Tomestone.T.Configuration.TokenValid = false;
+                                Tomestone.T.Configuration.CharacterClaimed = false;
+                                Tomestone.T.Configuration.Save();
+                            }
+                        }
+                    }
+                }
+
+
             }
         }
 
         private void DrawSettings()
         {
             bool sendActivity = Tomestone.T.Configuration.SendActivity;
+            bool sendGear = Tomestone.T.Configuration.SendGear;
 
             ImGui.TextWrapped($"Before we finish, check which data you want to send to {Tomestone.T.Name}.");
             ImGui.Separator();
@@ -178,6 +233,13 @@ namespace Dalamud.Tomestone.UI
                 Tomestone.T.Configuration.Save();
             }
             ImGuiComponents.HelpMarker("If enabled, Tomestone will send your activity data to Tomestone.gg. This includes your current job, level, zone and if you are traveling to another world.");
+
+            if (ImGui.Checkbox("Send gear data to Tomestone.gg", ref sendGear))
+            {
+                Tomestone.T.Configuration.SendGear = sendGear;
+                Tomestone.T.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("If enabled, Tomestone will send your current gear data to Tomestone.gg.");
 
             ImGui.Separator();
             if (ImGui.Button("Finish"))

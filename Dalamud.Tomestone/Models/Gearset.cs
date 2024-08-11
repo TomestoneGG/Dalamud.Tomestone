@@ -1,8 +1,6 @@
-using System;
+using NetStone.Model.Parseables.Character;
+using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone.Models
 {
@@ -10,7 +8,14 @@ namespace Dalamud.Tomestone.Models
     {
         public uint jobId { get; set; } = 0;
         public uint itemLevel { get; set; } = 0;
+        public List<Attribute> attributes { get; set; } = null;
         public List<Item> items { get; set; } = new List<Item>();
+    }
+
+    internal class Attribute
+    {
+        public string name { get; set; } = string.Empty;
+        public int value { get; set; } = 0;
     }
 
     // A equipped item
@@ -18,11 +23,13 @@ namespace Dalamud.Tomestone.Models
     {
         public uint itemId { get; set; } = 0;
         public bool hq { get; set; } = false;
+        [JsonIgnore]
+        public uint itemLevel { get; set; } = 0;
         public ItemSlot slot { get; set; } = 0;
         public List<Materia>? materia { get; set; } = null;
         public Glamour? glamour { get; set; } = null;
-        public uint dye1 { get; set; } = 0;
-        public uint dye2 { get; set; } = 0;
+        public string dye1 { get; set; } = string.Empty;
+        public string dye2 { get; set; } = string.Empty;
     }
 
     internal class Glamour
@@ -33,10 +40,17 @@ namespace Dalamud.Tomestone.Models
 
     internal class Materia
     {
-        public uint materiaType { get; set; } = 0;
-        public MateriaType type { get; set; } = 0;
-        public uint grade { get; set; } = 0;
-        public ushort slot { get; set; } = 0;
+        public string name { get; set; } = string.Empty;
+        public string stat { get; set; } = string.Empty;
+        public short value { get; set; } = 0;
+        public short slot { get; set; } = 0;
+    }
+
+    internal class MateriaIDTranslationEntry
+    {
+        public MateriaType Type { get; set; }
+        public uint grade { get; set; }
+        public uint materiaId { get; set; }
     }
 
     enum ItemSlot
