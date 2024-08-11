@@ -143,7 +143,7 @@ namespace Dalamud.Tomestone.Features
                             var materiaObject = new Models.Materia
                             {
                                 name = DalamudUtils.GetMateriaName(materia, materiaGrade),
-                                slot = (ushort)k,
+                                slot = (short)k,
                             };
 
                             // Add the materia to the gear

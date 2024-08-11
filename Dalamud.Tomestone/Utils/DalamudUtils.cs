@@ -1,5 +1,6 @@
 using Dalamud.Tomestone.Models;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
@@ -25,13 +26,26 @@ namespace Dalamud.Tomestone
             if (slot->ItemId == 0)
                 return null;
 
-            // Clean up the item ID if the item is HQ (starts with 10, for examplke 10500 or 1042890)
             var itemId = slot->ItemId;
             bool hq = slot->Flags == InventoryItem.ItemFlags.HighQuality;
+
+            // Get the item from Lumina
+            var itemSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>();
+            if (itemSheet == null)
+                throw new Exception("Failed to get item sheet");
+
+            var itemRow = itemSheet.GetRow(itemId);
+            if (itemRow == null)
+                throw new Exception("Failed to get item row");
+
+            // Check if the item has a item level
+            if (itemRow.LevelItem.Value == null)
+                throw new Exception("Item does not have a level");
 
             var item = new Item
             {
                 itemId = itemId,
+                itemLevel = (uint)itemRow.LevelItem.Value.RowId,
                 hq = hq,
                 slot = (ItemSlot)index,
             };
@@ -78,15 +92,13 @@ namespace Dalamud.Tomestone
                     continue;
                 }
 
-                var materiaGrade = materiaGradeArray[j];
+                
+
+                var materiaGrade = materiaGradeArray[j];            
 
                 item.materia ??= new List<Materia>();
 
-                item.materia.Add(new Materia
-                {
-                    name = GetMateriaName(materia, materiaGrade),
-                    slot = (ushort)j,
-                });
+                item.materia.Add(GetMateria(materia, materiaGrade, j));
             }
 
             return item;
@@ -147,6 +159,50 @@ namespace Dalamud.Tomestone
                 throw new Exception("Failed to get materia ID");
             }
             return materiaID.Name;
+        }
+
+        internal static Materia GetMateria(uint materiaType, uint grade, int slot)
+        {
+            var materiaSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Materia>(Game.ClientLanguage.English);
+            if (materiaSheet == null)
+            {
+                throw new Exception("Failed to get materia sheet");
+            }
+            var materiaTypeRow = materiaSheet.GetRow(materiaType);
+            if (materiaTypeRow == null)
+            {
+                throw new Exception("Failed to get materia type row");
+            }
+            // BaseParam.Name has materia name
+            // value[grade] has stat value
+
+            var materiaBaseParam = materiaTypeRow.BaseParam.Value;
+            if (materiaBaseParam == null)
+            {
+                throw new Exception("Failed to get materia type row value");
+            }
+
+            var materiaStat = materiaBaseParam.Name;
+            var materiaStatValue = materiaTypeRow.Value[grade];
+
+            var materiaGradeItem = materiaTypeRow?.Item[grade];
+            if (materiaGradeItem == null)
+            {
+                throw new Exception("Failed to get materia grade item");
+            }
+            var materiaID = materiaGradeItem.Value;
+            if (materiaID == null)
+            {
+                throw new Exception("Failed to get materia ID");
+            }
+
+            return new Materia
+            {
+                name = materiaID.Name,
+                stat = materiaStat,
+                value = materiaStatValue,
+                slot = (short)slot,
+            };
         }
 
         /// <summary>

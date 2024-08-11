@@ -1,3 +1,4 @@
+using NetStone.Model.Parseables.Character;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 
@@ -6,9 +7,15 @@ namespace Dalamud.Tomestone.Models
     internal class Gearset
     {
         public uint jobId { get; set; } = 0;
-        [JsonIgnore]
         public uint itemLevel { get; set; } = 0;
+        public List<Attribute> attributes { get; set; } = null;
         public List<Item> items { get; set; } = new List<Item>();
+    }
+
+    internal class Attribute
+    {
+        public string name { get; set; } = string.Empty;
+        public int value { get; set; } = 0;
     }
 
     // A equipped item
@@ -16,6 +23,8 @@ namespace Dalamud.Tomestone.Models
     {
         public uint itemId { get; set; } = 0;
         public bool hq { get; set; } = false;
+        [JsonIgnore]
+        public uint itemLevel { get; set; } = 0;
         public ItemSlot slot { get; set; } = 0;
         public List<Materia>? materia { get; set; } = null;
         public Glamour? glamour { get; set; } = null;
@@ -32,7 +41,9 @@ namespace Dalamud.Tomestone.Models
     internal class Materia
     {
         public string name { get; set; } = string.Empty;
-        public ushort slot { get; set; } = 0;
+        public string stat { get; set; } = string.Empty;
+        public short value { get; set; } = 0;
+        public short slot { get; set; } = 0;
     }
 
     internal class MateriaIDTranslationEntry

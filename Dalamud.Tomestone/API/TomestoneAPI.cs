@@ -50,7 +50,7 @@ namespace Dalamud.Tomestone.API
 
             // Setup the User-Agent (Dalamud/PluginVersion)
             this.client.DefaultRequestHeaders.UserAgent.Clear();
-            this.client.DefaultRequestHeaders.UserAgent.ParseAdd($"Dalamud/{Configuration.VersionString}");
+            this.client.DefaultRequestHeaders.UserAgent.ParseAdd($"Dalamud.Tomestone/{Configuration.VersionString}");
 
             return null;
         }
@@ -87,13 +87,12 @@ namespace Dalamud.Tomestone.API
 #if DEBUG
             Service.Log.Debug($"POST {url}: {json}");
 #endif
-
-            // Send the request
-            var response = await this.client.PostAsync(url, content);
-            if (!response.IsSuccessStatusCode)
-            {
-                return new APIError { IsError = true, ErrorMessage = $"Failed to send activity data ({response.StatusCode})" };
-            }
+            //// Send the request
+            //var response = await this.client.PostAsync(url, content);
+            //if (!response.IsSuccessStatusCode)
+            //{
+            //    return new APIError { IsError = true, ErrorMessage = $"Failed to send activity data ({response.StatusCode})" };
+            //}
 
             return null;
         }
@@ -130,13 +129,12 @@ namespace Dalamud.Tomestone.API
 #if DEBUG
             Service.Log.Debug($"POST {url}: {json}");
 #endif
-
-            // Send the request
-            var response = await this.client.PostAsync(url, content);
-            if (!response.IsSuccessStatusCode)
-            {
-                return new APIError { IsError = true, ErrorMessage = $"Failed to send gear data ({response.StatusCode})" };
-            }
+            ////Send the request
+            //var response = await this.client.PostAsync(url, content);
+            //if (!response.IsSuccessStatusCode)
+            //{
+            //    return new APIError { IsError = true, ErrorMessage = $"Failed to send gear data ({response.StatusCode})" };
+            //}
 
             return null;
         }

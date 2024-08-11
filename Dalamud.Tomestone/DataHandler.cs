@@ -42,8 +42,6 @@ namespace Dalamud.Tomestone
         internal TomestoneAPI api;
         internal DataHandlerStatus status = new DataHandlerStatus();
 
-        
-
         internal DataHandler(Tomestone _plugin)
         {
             plugin = _plugin;
@@ -53,7 +51,7 @@ namespace Dalamud.Tomestone
 
             // Initialize the player object
             player = new Player();
-            // Initialize the lodestone client in the background
+            // Initialize the lodestone client in the background//Hopefully this will be removed in the future
             var clientTask = Task.Run(() => InitLodestoneCient());
         }
 
@@ -175,6 +173,29 @@ namespace Dalamud.Tomestone
             }
         }
 
+        private void DoRequest(Func<Task<APIError?>> request)
+        {
+            var task = Task.Run(async () =>
+            {
+                try
+                {
+                    var error = await request();
+                    if (error != null)
+                    {
+                        Service.Log.Error(error.ErrorMessage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Service.Log.Error(ex, "Failed to update data.");
+                }
+                finally
+                {
+                    // Clean up
+                }
+            });
+        }
+
         // Handles base player data and activity data
         private unsafe void HandlePlayerState(Models.Player newPlayer)
         {
@@ -202,7 +223,7 @@ namespace Dalamud.Tomestone
                     currentWorld = newPlayer.currentWorldName,
                 };
                 // Send the stream data to the server, this is a fire and forget operation so we don't await it
-                var streamTask = Task.Run(() => api.SendActivity(player.name, player.world, activity));
+                DoRequest(() => api.SendActivity(player.name, player.world, activity));
             }
         }
 
@@ -352,14 +373,14 @@ namespace Dalamud.Tomestone
             }
 
             // Get the gearsets from the player state
-            var gear = Features.Gear.GetGear(localPlayer);
+            var gear = Features.Gear.GetGear(localPlayer, this.playerState);
             if (gear == null)
             {
                 return;
             }
 
             // Send gear data to the server
-            var apiTask = Task.Run(() => api.SendGear(player.name, player.world, gear));
+            DoRequest(() => api.SendGear(player.name, player.world, gear));
         }
 
         private unsafe void HandleGearsetState()
