@@ -1,5 +1,6 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Tomestone.API;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System;
 using System.Threading.Tasks;
 
@@ -41,9 +42,17 @@ namespace Dalamud.Tomestone.Features
             }
             result.currentJobId = (uint)currentJob.RowId;
 
-            // Print out the players current location
+            // Get the current zone ID
             var currentTerritory = Service.ClientState.TerritoryType;
             result.currentZoneId = (uint)currentTerritory;
+
+            // Get the current subzone ID (if available)
+            var ti = TerritoryInfo.Instance();
+            if (ti != null)
+            {
+                result.areaPlaceNameId = (uint)ti->AreaPlaceNameId;
+                result.subAreaPlaceNameId = (uint)ti->SubAreaPlaceNameId;
+            }
 
             string currentWorldName = string.Empty;
             // Check if the player is traveling to another world

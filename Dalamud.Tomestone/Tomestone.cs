@@ -4,7 +4,6 @@ using Dalamud.Plugin;
 using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using Dalamud.Tomestone.Windows;
 using System;
 using Dalamud.Tomestone.UI;
 
@@ -104,7 +103,7 @@ public unsafe class Tomestone : IDalamudPlugin
         var localPlayer = Service.ClientState.LocalPlayer;
 
         // Polling the framework is required to know if we had a ClassJob change
-        try { 
+        try {
             dataHandler.HandleFrameworkUpdate(localPlayer);
         } catch (Exception e) {
             Service.Log.Error(e, "Failed to handle framework update");
