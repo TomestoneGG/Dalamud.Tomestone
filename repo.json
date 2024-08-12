@@ -4,8 +4,8 @@
         "Name": "Tomestone",
         "Description": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
         "InternalName": "Dalamud.Tomestone",
-        "AssemblyVersion": "0.2.7",
-        "TestingAssemblyVersion": "0.2.7",
+        "AssemblyVersion": "0.2.9.0",
+        "TestingAssemblyVersion": "0.2.9.0",
         "RepoUrl": "https://github.com/TomestoneGG/Dalamud.Tomestone",
         "ApplicableVersion": "any",
         "DalamudApiLevel": 10,
@@ -14,9 +14,9 @@
         "DownloadCount": 0,
         "LastUpdate": 0,
         "LoadPriority": 69420,
-        "DownloadLinkInstall": "https://github.com/:REPOSITORY/releases/download/0.2.7/Dalamud.Tomestone.zip",
-        "DownloadLinkTesting": "https://github.com/:REPOSITORY/releases/download/0.2.7/Dalamud.Tomestone.zip",
-        "DownloadLinkUpdate": "https://github.com/:REPOSITORY/releases/download/0.2.7/Dalamud.Tomestone.zip",
-        "IconUrl": "https://raw.githubusercontent.com/:REPOSITORY/master/Data/tomestone.png"
+        "DownloadLinkInstall": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/0.2.9.0/Dalamud.Tomestone.zip",
+        "DownloadLinkTesting": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/0.2.9.0/Dalamud.Tomestone.zip",
+        "DownloadLinkUpdate": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/0.2.9.0/Dalamud.Tomestone.zip",
+        "IconUrl": "https://raw.githubusercontent.com/ATroschke/Dalamud.Tomestone/master/Data/tomestone.png"
     }
 ]
