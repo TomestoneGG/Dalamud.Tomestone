@@ -17,6 +17,6 @@
         "DownloadLinkInstall": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/0.2.9.0/Dalamud.Tomestone.zip",
         "DownloadLinkTesting": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/0.2.9.0/Dalamud.Tomestone.zip",
         "DownloadLinkUpdate": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/0.2.9.0/Dalamud.Tomestone.zip",
-        "IconUrl": "https://assets.tomestone.gg/static/icon.webp"
+        "IconUrl": "https://raw.githubusercontent.com/ATroschke/Dalamud.Tomestone/master/Data/tomestone.png"
     }
 ]
