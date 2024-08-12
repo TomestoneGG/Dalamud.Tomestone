@@ -61,7 +61,7 @@ namespace Dalamud.Tomestone
             updateRequested = true;
         }
 
-        public void HandleFrameworkUpdate(IPlayerCharacter localPlayer)
+        public void HandleFrameworkUpdate(IPlayerCharacter? localPlayer)
         {
             // Check if the last update was less than 5 seconds ago
             if (DateTime.Now - lastHandledFrameworkUpdate < TimeSpan.FromSeconds(5))

@@ -4,9 +4,9 @@
         "Name": "Tomestone",
         "InternalName": "Dalamud.Tomestone",
         "RepoUrl": "https://github.com/TomestoneGG/Dalamud.Tomestone",
-        "DownloadLinkInstall": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.2.1-beta/latest.zip",
-        "DownloadLinkUpdate": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.2.1-beta/latest.zip",
-        "AssemblyVersion": "0.2.1.0",
+        "DownloadLinkInstall": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.2.2-beta/latest.zip",
+        "DownloadLinkUpdate": "https://github.com/ATroschke/Dalamud.Tomestone/releases/download/v0.2.2-beta/latest.zip",
+        "AssemblyVersion": "0.2.2.0",
         "Changelog": "",
         "Description": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
         "ApplicableVersion": "any",
@@ -19,7 +19,7 @@
         "LoadSync": false,
         "CanUnloadAsync": false,
         "LoadPriority": 0,
-        "LastUpdate": 1723396719252,
+        "LastUpdate": 1723396719253,
         "Punchline": "A presence and gear tracker that syncs your in-game job, zone, level and gear changes to the tomestone.gg web site.",
         "AcceptsFeedback": true
     }
