@@ -68,10 +68,12 @@ jobs:
       - name: Write out repo.json
         run: |
           $ver = '${{ github.ref }}' -replace 'refs/tags/',''
+          $repo = '${{ github.repository}}'
           $path = './base_repo.json'
           $new_path = './repo.json'
           $content = get-content -path $path
           $content = $content -replace '1.0.0.0',$ver
+          $content = $content -replace ':REPOSITORY:',$repo
           set-content -Path $new_path -Value $content
       - name: Commit repo.json
         run: |
