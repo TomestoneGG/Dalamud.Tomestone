@@ -84,6 +84,7 @@ namespace Dalamud.Tomestone
                 return;
             }
 
+            var playerData = Features.Player.GetCharacterInfo(localPlayer);
             if (!plugin.Configuration.TokenChecked)
             {
                 if (plugin.Configuration.DalamudToken == null || plugin.Configuration.DalamudToken == "")
@@ -95,21 +96,16 @@ namespace Dalamud.Tomestone
                 GetPlayerState();
                 GetUIState();
                 // Check if the token is valid by sending activity data
-                var playerData = Features.Player.GetCharacterInfo(localPlayer);
                 HandleTokenChange(playerData);
             }
-            else if (player.currentJobId != (uint)currentJob.RowId || player.currentJobLevel != (uint)localPlayer.Level)
+            else if (player.currentJobId != (uint)currentJob.RowId || player.currentJobLevel != (uint)localPlayer.Level || player.areaPlaceNameId != playerData.areaPlaceNameId || player.subAreaPlaceNameId != playerData.subAreaPlaceNameId)
             {
                 GetPlayerState();
                 GetUIState();
-                // Grab character name, job, level territory and traveling data to send to the backend
-                var playerData = Features.Player.GetCharacterInfo(localPlayer);
 
                 // Check for changes in the player state and send if needed
                 HandlePlayerState(playerData);
             }
-
-
 
             // Check if an update was requested
             if (updateRequested)
@@ -189,28 +185,6 @@ namespace Dalamud.Tomestone
             }
         }
 
-        //private void DoRequest(Func<Task<APIError?>> request)
-        //{
-        //    var task = Task.Run(async () =>
-        //    {
-        //        try
-        //        {
-        //            var error = await request();
-        //            if (error != null)
-        //            {
-        //                Service.Log.Error(error.ErrorMessage);
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Service.Log.Error(ex, "Failed to update data.");
-        //        }
-        //        finally
-        //        {
-        //            // Clean up
-        //        }
-        //    });
-        //}
 
         // This exists so we can handle if the token changed and give some feedback to the user
         private unsafe void HandleTokenChange(Models.Player newPlayer)
@@ -239,8 +213,10 @@ namespace Dalamud.Tomestone
                 this.player = newPlayer;
                 changed = true;
             }
+
+            // TODO: This is kind of double-checking, clean up a bit
             // Check if the player state (job, level, zone, current world) has changed
-            else if (this.player.currentJobId != newPlayer.currentJobId || this.player.currentJobLevel != newPlayer.currentJobLevel || this.player.currentZoneId != newPlayer.currentZoneId || this.player.currentWorldName != newPlayer.currentWorldName)
+            else if (this.player.currentJobId != newPlayer.currentJobId || this.player.currentJobLevel != newPlayer.currentJobLevel || this.player.currentZoneId != newPlayer.currentZoneId || this.player.currentWorldName != newPlayer.currentWorldName || this.player.areaPlaceNameId != newPlayer.areaPlaceNameId || this.player.subAreaPlaceNameId != newPlayer.subAreaPlaceNameId)
             {
                 this.player = newPlayer;
                 changed = true;
@@ -254,6 +230,8 @@ namespace Dalamud.Tomestone
                     jobLevel = newPlayer.currentJobLevel,
                     territoryId = newPlayer.currentZoneId,
                     currentWorld = newPlayer.currentWorldName,
+                    placeNameId = newPlayer.areaPlaceNameId,
+                    subPlaceNameId = newPlayer.subAreaPlaceNameId,
                 };
                 // Send the stream data to the server, this is a fire and forget operation so we don't await it
                 api.DoRequest(() => api.SendActivity(player.name, player.world, activity));
