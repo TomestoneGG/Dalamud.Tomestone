@@ -33,6 +33,8 @@ namespace Dalamud.Tomestone.Models
         public uint currentJobId { get; set; } = 0;
         public uint currentJobLevel { get; set; } = 0;
         public uint currentZoneId { get; set; } = 0;  
+        public uint areaPlaceNameId { get; set; } = 0; // Sub region ID
+        public uint subAreaPlaceNameId { get; set; } = 0; // Sub sub region ID
         public string currentWorldName { get; set; } = string.Empty; // Current world name
     }
 }
