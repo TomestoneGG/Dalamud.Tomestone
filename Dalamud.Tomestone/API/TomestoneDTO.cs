@@ -15,4 +15,9 @@ namespace Dalamud.Tomestone.API
         public uint subPlaceNameId { get; set; } = 0;
         public string currentWorld { get; set; } = string.Empty;
     }
+
+    internal class TriadCardsDTO
+    {
+        public List<uint> cards { get; set; } = new List<uint>();
+    }
 }

@@ -223,10 +223,12 @@ namespace Dalamud.Tomestone.UI
         {
             bool sendActivity = Tomestone.T.Configuration.SendActivity;
             bool sendGear = Tomestone.T.Configuration.SendGear;
+            bool sendTriad = Tomestone.T.Configuration.SendTriad;
 
             ImGui.TextWrapped($"Before we finish, check which data you want to send to {Tomestone.T.Name}.");
             ImGui.Separator();
 
+            // TODO: Make sure wording here equals the wording on the plugin settings page
             if (ImGui.Checkbox("Send activity data to Tomestone.gg", ref sendActivity))
             {
                 Tomestone.T.Configuration.SendActivity = sendActivity;
@@ -240,6 +242,13 @@ namespace Dalamud.Tomestone.UI
                 Tomestone.T.Configuration.Save();
             }
             ImGuiComponents.HelpMarker("If enabled, Tomestone will send your current gear data to Tomestone.gg.");
+
+            if (ImGui.Checkbox("Send Triple Triad data to Tomestone.gg", ref sendTriad))
+            {
+                Tomestone.T.Configuration.SendTriad = sendTriad;
+                Tomestone.T.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("If enabled, Tomestone will send your Triple Triad card data to Tomestone.gg.");
 
             ImGui.Separator();
             if (ImGui.Button("Finish"))

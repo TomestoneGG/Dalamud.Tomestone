@@ -137,13 +137,16 @@ namespace Dalamud.Tomestone
                 return;
             }
 
+            // Update all data that might change less frequently
+            HandleTripleTriadState();
+
             // These aren't in the official Plugin yet
 #if DEBUG
             // Need API Specs for this, commented out for now
             // If yes, we can update the whole character data
             //Service.Log.Info("Updating character data.");
 
-            HandleTripleTriadState();
+
 
             HandleOrchestrionState();
 
@@ -261,10 +264,27 @@ namespace Dalamud.Tomestone
         {
             try
             {
+                if (this.plugin.Configuration.Enabled == false || this.plugin.Configuration.SendTriad == false)
+                {
+                    return;
+                }
+
                 // Get the triple triad cards from the player state
                 var cards = Features.TripleTriad.GetTripleTriadCards(this.uiState);
 
-                Service.Log.Debug($"Player has {cards.Count} Triple Triad cards.");
+                if (cards == null)
+                {
+                    return;
+                }
+
+                // Build a DTO object with the card IDs
+                var cardDTO = new TriadCardsDTO
+                {
+                    cards = cards
+                };
+
+                // Send the card data to the server
+                api.DoRequest(() => api.SendTriadCards(player.name, player.world, cardDTO));
             }
             catch (Exception ex)
             {

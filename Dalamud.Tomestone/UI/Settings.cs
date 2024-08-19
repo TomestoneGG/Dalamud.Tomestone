@@ -18,6 +18,7 @@ namespace Dalamud.Tomestone.UI
 
             bool sendActivity = Tomestone.T.Configuration.SendActivity;
             bool sendGear = Tomestone.T.Configuration.SendGear;
+            bool sendTriad = Tomestone.T.Configuration.SendTriad;
 
             ImGui.TextWrapped($"Here you can change some settings Tomestone will use.");
             ImGui.TextWrapped($"In order to use Tomestone, please claim your character and set your Dalamud access token first!");
@@ -70,22 +71,29 @@ namespace Dalamud.Tomestone.UI
             {
                 if (ImGui.CollapsingHeader("Data Settings"))
                 {
-                    ImGui.TextWrapped("Here you can change some settings regarding the data Tomestone will send.");
+                    ImGui.TextWrapped("Here you can change some settings regarding the data Tomestone will collect.");
                     ImGui.Separator();
 
-                    if (ImGui.Checkbox("Send activity data to Tomestone.gg", ref sendActivity))
+                    if (ImGui.Checkbox("Activity Data", ref sendActivity))
                     {
                         Tomestone.T.Configuration.SendActivity = sendActivity;
                         Tomestone.T.Configuration.Save();
                     }
-                    ImGuiComponents.HelpMarker("If enabled, Tomestone will send your activity data to Tomestone.gg. This includes your current job, level, zone and if you are traveling to another world.");
+                    ImGuiComponents.HelpMarker("If enabled, Tomestone collects your activity data. This includes your current job, level, zone and if you are traveling to another world.");
 
-                    if (ImGui.Checkbox("Send gear data to Tomestone.gg", ref sendGear))
+                    if (ImGui.Checkbox("Current gear", ref sendGear))
                     {
                         Tomestone.T.Configuration.SendGear = sendGear;
                         Tomestone.T.Configuration.Save();
                     }
-                    ImGuiComponents.HelpMarker("If enabled, Tomestone will send your gear data to Tomestone.gg.");
+                    ImGuiComponents.HelpMarker("If enabled, Tomestone collects your currently equipped gear.");
+
+                    if (ImGui.Checkbox("Triple Triad card data", ref sendTriad))
+                    {
+                        Tomestone.T.Configuration.SendTriad = sendTriad;
+                        Tomestone.T.Configuration.Save();
+                    }
+                    ImGuiComponents.HelpMarker("If enabled, Tomestone collects your Triple Triad card data.");
                 }
             }
         }

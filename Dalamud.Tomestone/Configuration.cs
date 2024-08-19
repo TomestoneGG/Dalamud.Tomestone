@@ -23,6 +23,8 @@ public class Configuration : IPluginConfiguration
     public bool SendActivity { get; set; } = true;
     // Enables/Disables sending current gear data
     public bool SendGear { get; set; } = true;
+    // Enables/Disables sending triad card data
+    public bool SendTriad { get; set; } = true;
 
     public static readonly string VersionString = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
     public static readonly string DalamudVersion = Util.AssemblyVersion;
