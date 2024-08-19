@@ -19,7 +19,7 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
 
       - name: Checkout and initialise
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -37,7 +37,7 @@ jobs:
         run: dotnet build --no-restore --verbosity normal --configuration Release
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Dalamud.Tomestone-release-${{ github.sha }}
           path: |
