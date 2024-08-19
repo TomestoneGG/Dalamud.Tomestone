@@ -21,6 +21,8 @@ This plugin is a work in progress and is not yet ready for production use.
     - [x] Triple Triad Cards
     - [x] Blue Magic Spells
     - [ ] Emotes
+    - [ ] Fashion Accessories
+    - [ ] Hairstyles
 - [ ] Sends data to Tomestone.gg
     - [x] Activity data
     - [x] Current gear
@@ -28,6 +30,8 @@ This plugin is a work in progress and is not yet ready for production use.
     - [ ] Mounts
     - [ ] Minions
     - [ ] Orchestrion Rolls
-    - [ ] Triple Triad Cards
+    - [x] Triple Triad Cards
     - [ ] Blue Magic Spells
     - [ ] Emotes
+    - [ ] Fashion Accessories
+    - [ ] Hairstyles
