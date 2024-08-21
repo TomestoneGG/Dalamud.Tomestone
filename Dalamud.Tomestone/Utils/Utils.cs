@@ -5,6 +5,16 @@ namespace Dalamud.Tomestone
 {
     internal static class Utils
     {
+        public static void OpenTomestoneLink(string worldName, string charName)
+        {
+            OpenLink($"https://tomestone.gg/character-name/{worldName}/{charName}");
+        }
+
+        public static void OpenLink(string link)
+        {
+            Dalamud.Utility.Util.OpenLink(link);
+        }
+
         /// <summary>
         /// Open a URL in the default browser.
         /// Supports Windows, Linux, and macOS.

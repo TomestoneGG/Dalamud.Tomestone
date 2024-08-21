@@ -26,6 +26,8 @@ public class Configuration : IPluginConfiguration
     // Enables/Disables sending triad card data
     public bool SendTriad { get; set; } = true;
 
+    public string ContextMenuButtonName { get; set; } = "Open Tomestone";
+
     public static readonly string VersionString = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
     public static readonly string DalamudVersion = Util.AssemblyVersion;
 

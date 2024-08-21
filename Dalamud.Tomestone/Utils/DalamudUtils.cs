@@ -1,15 +1,55 @@
 using Dalamud.Tomestone.Models;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using Newtonsoft.Json;
 using System;
+using Lumina.Excel.GeneratedSheets;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Dalamud.Tomestone
 {
     internal static class DalamudUtils
     {
+        public static bool IsWorldValid(uint worldId)
+        {
+            return IsWorldValid(GetWorld(worldId));
+        }
+
+        public static bool IsWorldValid(World world)
+        {
+            if (world.Name.RawData.IsEmpty || GetRegionCode(world) == string.Empty)
+            {
+                return false;
+            }
+
+            return char.IsUpper((char)world.Name.RawData[0]);
+        }
+
+        public static World GetWorld(uint worldId)
+        {
+            var worldSheet = Service.DataManager.GetExcelSheet<World>()!;
+            var world = worldSheet.FirstOrDefault(x => x.RowId == worldId);
+            if (world == null)
+            {
+                return worldSheet.First();
+            }
+
+            return world;
+        }
+
+        public static string GetRegionCode(World world)
+        {
+            return world.DataCenter?.Value?.Region switch
+            {
+                1 => "JP",
+                2 => "NA",
+                3 => "EU",
+                4 => "OC",
+                _ => string.Empty,
+            };
+        }
+
         // Get the equipped item in a specific slot
-        internal static unsafe Item? GetEquippedItem(int index)
+        internal static unsafe Models.Item? GetEquippedItem(int index)
         {
             var im = InventoryManager.Instance();
             if (im == null)
@@ -42,7 +82,7 @@ namespace Dalamud.Tomestone
             if (itemRow.LevelItem.Value == null)
                 throw new Exception("Item does not have a level");
 
-            var item = new Item
+            var item = new Models.Item
             {
                 itemId = itemId,
                 itemLevel = (uint)itemRow.LevelItem.Value.RowId,
@@ -96,7 +136,7 @@ namespace Dalamud.Tomestone
 
                 var materiaGrade = materiaGradeArray[j];            
 
-                item.materia ??= new List<Materia>();
+                item.materia ??= new List<Models.Materia>();
 
                 item.materia.Add(GetMateria(materia, materiaGrade, j));
             }
@@ -161,7 +201,7 @@ namespace Dalamud.Tomestone
             return materiaID.Name;
         }
 
-        internal static Materia GetMateria(uint materiaType, uint grade, int slot)
+        internal static Models.Materia GetMateria(uint materiaType, uint grade, int slot)
         {
             var materiaSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Materia>(Game.ClientLanguage.English);
             if (materiaSheet == null)
@@ -196,7 +236,7 @@ namespace Dalamud.Tomestone
                 throw new Exception("Failed to get materia ID");
             }
 
-            return new Materia
+            return new Models.Materia
             {
                 name = materiaID.Name,
                 stat = materiaStat,
