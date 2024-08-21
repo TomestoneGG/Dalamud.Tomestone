@@ -57,6 +57,9 @@ public unsafe class Tomestone : IDalamudPlugin
         Service.ClientState.TerritoryChanged += OnTerritoryChanged;
         Service.Framework.Update += OnFrameworkUpdate;
 
+        // Register ContextMenu
+        ContextMenu.Enable();
+
         // Check if we are already logged in
         if (Service.ClientState.IsLoggedIn)
         {
@@ -75,6 +78,8 @@ public unsafe class Tomestone : IDalamudPlugin
         PluginUI.Dispose();
 
         WindowSystem.RemoveAllWindows();
+
+        ContextMenu.Disable();
 
         // Unregister events for the plugin safely
         try { 
