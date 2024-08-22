@@ -16,22 +16,33 @@ This plugin is a work in progress and is not yet ready for production use.
         - [x] Dye
     - [x] Achievements
     - [x] Mounts
+    - [x] Fish
     - [x] Minions
     - [x] Orchestrion Rolls
     - [x] Triple Triad Cards
+    - [ ] Triple Triad NPCs
     - [x] Blue Magic Spells
     - [ ] Emotes
     - [ ] Fashion Accessories
     - [ ] Hairstyles
-- [ ] Sends data to Tomestone.gg
+    - [ ] Chocobo Bardings
+    - [ ] Framer Kits
+    - [ ] Research: read/screenshot Adventure Plate
+- [x] Sends data to Tomestone.gg
     - [x] Activity data
     - [x] Current gear
     - [ ] Achievements
     - [ ] Mounts
+    - [ ] Fish
     - [ ] Minions
     - [ ] Orchestrion Rolls
     - [x] Triple Triad Cards
+    - [ ] Triple Triad NPCs
     - [ ] Blue Magic Spells
     - [ ] Emotes
     - [ ] Fashion Accessories
     - [ ] Hairstyles
+    - [ ] Chocobo Bardings
+    - [ ] Framer Kits
+- [ ] In-Game interaction
+    - [x] Tomestone Context Menu(s?)

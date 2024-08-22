@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -19,6 +20,7 @@ namespace Dalamud.Tomestone
         /// Open a URL in the default browser.
         /// Supports Windows, Linux, and macOS.
         /// </summary>
+        [Obsolete("OpenUrl is obsolete, use OpenLink instead!")]
         internal static void OpenUrl(string url)
         {
             try

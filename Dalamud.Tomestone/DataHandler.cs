@@ -139,17 +139,10 @@ namespace Dalamud.Tomestone
 
             // Update all data that might change less frequently
             HandleTripleTriadState();
-
-            // These aren't in the official Plugin yet
-#if DEBUG
-            // Need API Specs for this, commented out for now
-            // If yes, we can update the whole character data
-            //Service.Log.Info("Updating character data.");
-
-
-
             HandleOrchestrionState();
 
+#if DEBUG
+            // These aren't in the official Plugin yet (lack an endpoint)
             HandleBlueMageState();
 
             HandleJobState();
@@ -296,10 +289,27 @@ namespace Dalamud.Tomestone
         {
             try
             {
+                if (this.plugin.Configuration.Enabled == false || this.plugin.Configuration.SendOrchestrion == false)
+                {
+                    return;
+                }
+
                 // Get the orchestrion rolls from the player state
                 var rolls = Features.Orchestrion.GetOrchestrionRolls(this.playerState);
 
-                Service.Log.Debug($"Player has {rolls.Count} Orchestrion rolls.");
+                if (rolls == null)
+                {
+                    return;
+                }
+
+                // Build a DTO object with the roll IDs
+                var rollDTO = new OrchestrionDTO
+                {
+                    rolls = rolls
+                };
+
+                // Send the roll data to the server
+                api.DoRequest(() => api.SendOrchestrionRolls(player.name, player.world, rollDTO));
             }
             catch (Exception ex)
             {

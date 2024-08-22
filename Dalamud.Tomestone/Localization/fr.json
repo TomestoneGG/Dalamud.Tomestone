@@ -1,0 +1,17 @@
+{
+    "FL_StepWelcome": {
+        "message": "Welcome"
+    },
+    "FL_StepCharacterClaim": {
+        "message": "Importer un caractère"
+    },
+    "FL_StepDalamudToken": {
+        "message": "Dalamud Token"
+    },
+    "FL_StepSettings": {
+        "message": "Paramètres"
+    },
+    "MAIN_ImageHint": {
+        "message": "Have a Tomestone!"
+    }
+}

@@ -15,7 +15,7 @@ public class Configuration : IPluginConfiguration
     public string DalamudToken { get; set; } = string.Empty;
     public bool TokenChecked { get; set; } = false;
     public bool TokenValid { get; set; } = false;
-    public bool CharacterClaimed { get; set; } = false;
+    public bool CharacterClaimed { get; set; } = true;
 
     // Enables/Disables all data sending to tomestone.gg
     public bool Enabled { get; set; } = true;
@@ -25,6 +25,8 @@ public class Configuration : IPluginConfiguration
     public bool SendGear { get; set; } = true;
     // Enables/Disables sending triad card data
     public bool SendTriad { get; set; } = true;
+    // Enables/Disables sending orchestrion data
+    public bool SendOrchestrion { get; set; } = true;
 
     public string ContextMenuButtonName { get; set; } = "Open Tomestone";
 

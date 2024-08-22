@@ -1,12 +1,7 @@
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System.Numerics;
-
-using Dalamud.Interface;
-using Dalamud.Interface.Colors;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
-using Dalamud.Utility;
 using System;
 using System.IO;
 
@@ -19,21 +14,43 @@ namespace Dalamud.Tomestone.UI
     {
         public OpenWindow OpenWindow { get; set; }
 
+        private string? imageHint;
+        private bool hasCachedLocStrings;
+
         public PluginUI() : base($"{Tomestone.T.Name} {Tomestone.T.GetType().Assembly.GetName().Version}###Tomestone")
         {
             this.RespectCloseHotkey = false;
             this.SizeConstraints = new()
             {
-                MinimumSize = new(750, 500),
+                MinimumSize = new(1000, 500),
                 MaximumSize = new(9999, 9999)
             };
             Tomestone.T.WindowSystem.AddWindow(this);
+
+            // Make sure we are on "Overview" when opening the UI
+            OpenWindow = OpenWindow.Overview;
+
+            if (Tomestone.CurrentLocManager != null)
+            {
+                Tomestone.CurrentLocManager.LocalizationChanged += (langCode) => { hasCachedLocStrings = false; };
+            }
         }
 
         public void Dispose() { }
 
+        private void UpdateLocalizationCache()
+        {
+            if (hasCachedLocStrings) { return; }
+            hasCachedLocStrings = true;
+
+            // Update the strings
+            imageHint = Localization.Localize("MAIN_ImageHint", "Have a Tomestone!");
+        }
+
         public override void Draw()
         {
+            UpdateLocalizationCache();
+
             var region = ImGui.GetContentRegionAvail();
             var itemSpacing = ImGui.GetStyle().ItemSpacing;
 
@@ -65,7 +82,7 @@ namespace Dalamud.Tomestone.UI
                             {
                                 ImGui.Image(logo.ImGuiHandle, new(125f, 125f));
                                 if (ImGui.IsItemHovered())
-                                    ImGui.SetTooltip("Have a Tomestone!");
+                                    ImGui.SetTooltip(imageHint);
                             });
                         }
 

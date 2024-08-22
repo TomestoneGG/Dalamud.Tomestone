@@ -90,7 +90,7 @@ namespace Dalamud.Tomestone.API
                 }
                 catch (Exception ex)
                 {
-                    Service.Log.Information(ex, "Failed to update data.");
+                    Service.Log.Warning($"API Error: {ex.Message}");
                 }
                 finally
                 {
@@ -163,7 +163,9 @@ namespace Dalamud.Tomestone.API
             // Build the URL
             var url = string.Format(ACTIVITY_ENDPOINT, API_URL, playerName, worldName);
 
+#if DEBUG
             Service.Log.Debug($"POST {url}: {json}");
+#endif
 
             // Send the request
             var response = await this.client.PostAsync(url, content);
@@ -179,7 +181,7 @@ namespace Dalamud.Tomestone.API
                     return new APIError { IsError = true, ErrorType = APIErrorType.InvalidToken, ErrorMessage = "Invalid API key." };
                 }
 
-                return new APIError { IsError = true, ErrorType = APIErrorType.GenericError, ErrorMessage = $"Failed to send activity data ({response.StatusCode})" };
+                return new APIError { IsError = true, ErrorType = APIErrorType.GenericError, ErrorMessage = $"Activity ({response.StatusCode})" };
             }
 
             return null;
@@ -208,7 +210,9 @@ namespace Dalamud.Tomestone.API
             // Build the URL
             var url = string.Format(GEAR_ENDPOINT, API_URL, playerName, worldName);
 
+#if DEBUG
             Service.Log.Debug($"POST {url}: {json}");
+#endif
 
             //Send the request
             var response = await this.client.PostAsync(url, content);
@@ -224,7 +228,7 @@ namespace Dalamud.Tomestone.API
                     return new APIError { IsError = true, ErrorType = APIErrorType.InvalidToken, ErrorMessage = "Invalid API key." };
                 }
 
-                return new APIError { IsError = true, ErrorMessage = $"Failed to send gear data ({response.StatusCode})" };
+                return new APIError { IsError = true, ErrorMessage = $"Gear ({response.StatusCode})" };
             }
 
             return null;
@@ -253,7 +257,9 @@ namespace Dalamud.Tomestone.API
             // Build the URL
             var url = string.Format(TRIAD_CARDS_ENDPOINT, API_URL, playerName, worldName);
 
+#if DEBUG
             Service.Log.Debug($"POST {url}: {json}");
+#endif
 
             // Send the request
             var response = await this.client.PostAsync(url, content);
@@ -269,7 +275,54 @@ namespace Dalamud.Tomestone.API
                     return new APIError { IsError = true, ErrorType = APIErrorType.InvalidToken, ErrorMessage = "Invalid API key." };
                 }
 
-                return new APIError { IsError = true, ErrorMessage = $"Failed to send Triple Triad card data ({response.StatusCode})" };
+                return new APIError { IsError = true, ErrorMessage = $"Triple Triad Cards ({response.StatusCode})" };
+            }
+
+            return null;
+        }
+
+        private const string ORCHESTRION_ENDPOINT = @"{0}/update-orchestrion-rolls/{1}/{2}";
+        public async Task<APIError?> SendOrchestrionRolls(string playerName, string worldName, OrchestrionDTO payload)
+        {
+            // Ensure playerName and worldName are not empty
+            if (playerName == "" || worldName == "")
+            {
+                return new APIError { IsError = true, ErrorMessage = "Player name or world name is empty." };
+            }
+
+            // Lowercase the player and world name, just to be sure
+            playerName = playerName.ToLower();
+            worldName = worldName.ToLower();
+
+            // URL Encode the Player Name
+            playerName = Uri.EscapeDataString(playerName);
+
+            // Serialize the payload to JSON
+            string json = JsonConvert.SerializeObject(payload);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            // Build the URL
+            var url = string.Format(ORCHESTRION_ENDPOINT, API_URL, playerName, worldName);
+
+#if DEBUG
+            Service.Log.Debug($"POST {url}: {json}");
+#endif
+
+            // Send the request
+            var response = await this.client.PostAsync(url, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    return new APIError { IsError = true, ErrorType = APIErrorType.UnclaimedCharacter, ErrorMessage = $"Character {playerName} on {worldName} is not claimed." };
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return new APIError { IsError = true, ErrorType = APIErrorType.InvalidToken, ErrorMessage = "Invalid API key." };
+                }
+
+                return new APIError { IsError = true, ErrorMessage = $"Orchestrion Rolls ({response.StatusCode})" };
             }
 
             return null;
