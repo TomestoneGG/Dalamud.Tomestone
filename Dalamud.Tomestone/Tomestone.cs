@@ -6,6 +6,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using System;
 using Dalamud.Tomestone.UI;
+using System.Reflection;
 
 namespace Dalamud.Tomestone;
 
@@ -17,7 +18,11 @@ public unsafe class Tomestone : IDalamudPlugin
 
     public string Name => "Tomestone";
     private const string CommandName = "/ptomestone";
+    private readonly Localization locManager;
     internal static Tomestone T = null!;
+
+    public static Localization? CurrentLocManager;
+    private string[] supportedLangCodes = new string[] { "de", "en" };
 
     internal PluginUI PluginUI;
     internal FirstLaunchUI FirstLaunchUI;
@@ -37,6 +42,11 @@ public unsafe class Tomestone : IDalamudPlugin
         // you might normally want to embed resources and load them from the manifest stream
         var logoPath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "tomestone.png");
 
+        var assemblyName = GetType().Assembly.GetName().Name;
+        locManager = new Localization($"{assemblyName}.Localization.", "", true);
+        locManager.SetupWithLangCode(PluginInterface.UiLanguage);
+        CurrentLocManager = locManager;
+
         dataHandler = new DataHandler(this);
 
         PluginUI = new();
@@ -46,13 +56,12 @@ public unsafe class Tomestone : IDalamudPlugin
         {
             HelpMessage = "A useful message to display in /xlhelp"
         });
+     
 
+        // Register plugin hooks
         PluginInterface.UiBuilder.Draw += DrawUI;
-
-        // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += TogglePluginUI;
-
-        // Register events for the plugin
+        PluginInterface.LanguageChanged += OnLanguageChanged;
         PluginInterface.Create<Service>();
         Service.ClientState.TerritoryChanged += OnTerritoryChanged;
         Service.Framework.Update += OnFrameworkUpdate;
@@ -70,6 +79,19 @@ public unsafe class Tomestone : IDalamudPlugin
         {
             // Else we need to wait for the login event
             Service.ClientState.Login += OnLogin;
+        }
+    }
+
+    private void OnLanguageChanged(string langCode)
+    {
+        // check if resource is available, will cause exception if trying to load empty json
+        if (Array.Find(supportedLangCodes, x => x == langCode) != null)
+        {
+            locManager.SetupWithLangCode(langCode);
+        }
+        else
+        {
+            locManager.SetupWithFallbacks();
         }
     }
 

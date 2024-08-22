@@ -20,4 +20,9 @@ namespace Dalamud.Tomestone.API
     {
         public List<uint> cards { get; set; } = new List<uint>();
     }
+
+    internal class OrchestrionDTO
+    {
+        public List<uint> rolls { get; set; } = new List<uint>();
+    }
 }

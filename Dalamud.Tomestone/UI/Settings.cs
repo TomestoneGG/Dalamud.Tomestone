@@ -15,6 +15,7 @@ namespace Dalamud.Tomestone.UI
             bool sendActivity = Tomestone.T.Configuration.SendActivity;
             bool sendGear = Tomestone.T.Configuration.SendGear;
             bool sendTriad = Tomestone.T.Configuration.SendTriad;
+            bool sendOrchestrion = Tomestone.T.Configuration.SendOrchestrion;
 
             ImGui.TextWrapped($"Here you can change some settings Tomestone will use.");
             ImGui.TextWrapped($"In order to use Tomestone, please claim your character and set your Dalamud access token first!");
@@ -75,7 +76,7 @@ namespace Dalamud.Tomestone.UI
                         Tomestone.T.Configuration.SendActivity = sendActivity;
                         Tomestone.T.Configuration.Save();
                     }
-                    ImGuiComponents.HelpMarker("If enabled, Tomestone collects your activity data. This includes your current job, level, zone and if you are traveling to another world.");
+                    ImGuiComponents.HelpMarker("If enabled, Tomestone collects your activity data. This includes your current job, level, zone and if you are traveling to another world. This is NOT displayed on your activity page, but used for the streams list.");
 
                     if (ImGui.Checkbox("Current gear", ref sendGear))
                     {
@@ -90,6 +91,13 @@ namespace Dalamud.Tomestone.UI
                         Tomestone.T.Configuration.Save();
                     }
                     ImGuiComponents.HelpMarker("If enabled, Tomestone collects your Triple Triad card data.");
+
+                    if (ImGui.Checkbox("Orchestrion roll data", ref sendOrchestrion))
+                    {
+                        Tomestone.T.Configuration.SendOrchestrion = sendOrchestrion;
+                        Tomestone.T.Configuration.Save();
+                    }
+                    ImGuiComponents.HelpMarker("If enabled, Tomestone collects your Orchestrion roll data.");
                 }
             }
         }

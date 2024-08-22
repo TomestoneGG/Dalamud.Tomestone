@@ -11,12 +11,18 @@ namespace Dalamud.Tomestone.UI
     {
         public OnboardingStep onboardingStep;
 
+        private string? stepWelcome;
+        private string? stepCharacterClaim;
+        private string? stepDalamudToken;
+        private string? stepSettings;
+        private bool hasCachedLocStrings;
+
         public FirstLaunchUI() : base($"{Tomestone.T.Name} {Tomestone.T.GetType().Assembly.GetName().Version}###TomestoneFirstLaunch")
         {
             this.RespectCloseHotkey = false;
             this.SizeConstraints = new()
             {
-                MinimumSize = new(750, 400),
+                MinimumSize = new(1000, 500),
                 MaximumSize = new(9999, 9999)
             };
 
@@ -27,12 +33,31 @@ namespace Dalamud.Tomestone.UI
             this.Position = new Vector2(screen.Pos.X + screen.Size.X / 2 - this.SizeConstraints.Value.MinimumSize.X / 2, screen.Pos.Y + screen.Size.Y / 2 - this.SizeConstraints.Value.MinimumSize.Y / 2);
 
             Tomestone.T.WindowSystem.AddWindow(this);
+
+            if (Tomestone.CurrentLocManager != null)
+            {
+                Tomestone.CurrentLocManager.LocalizationChanged += (langCode) => { hasCachedLocStrings = false; };
+            }
         }
 
         public void Dispose() { }
 
+        private void UpdateLocalizationCache()
+        {
+            if (hasCachedLocStrings) { return; }
+            hasCachedLocStrings = true;
+
+            // Update the strings
+            stepWelcome = Localization.Localize("FL_StepWelcome", "Welcome");
+            stepCharacterClaim = Localization.Localize("FL_StepCharacterClaim", "Character Claim");
+            stepDalamudToken = Localization.Localize("FL_StepDalamudToken", "Dalamud Token");
+            stepSettings = Localization.Localize("FL_StepSettings", "Settings");
+        }
+
         public override void Draw()
         {
+            UpdateLocalizationCache();
+
             var region = ImGui.GetContentRegionAvail();
             var itemSpacing = ImGui.GetStyle().ItemSpacing;
 
@@ -55,13 +80,13 @@ namespace Dalamud.Tomestone.UI
                     ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
                     using (var leftChild = ImRaii.Child($"###TomestoneLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
                     {
-                        ImGui.Selectable("Welcome", onboardingStep == OnboardingStep.Welcome, ImGuiSelectableFlags.SpanAllColumns);
+                        ImGui.Selectable(stepWelcome, onboardingStep == OnboardingStep.Welcome, ImGuiSelectableFlags.SpanAllColumns);
                         ImGui.Spacing();
-                        ImGui.Selectable("Character Claim", onboardingStep == OnboardingStep.CharacterClaim, ImGuiSelectableFlags.SpanAllColumns);
+                        ImGui.Selectable(stepCharacterClaim, onboardingStep == OnboardingStep.CharacterClaim, ImGuiSelectableFlags.SpanAllColumns);
                         ImGui.Spacing();
-                        ImGui.Selectable("Dalamud Token", onboardingStep == OnboardingStep.DalamudToken, ImGuiSelectableFlags.SpanAllColumns);
+                        ImGui.Selectable(stepDalamudToken, onboardingStep == OnboardingStep.DalamudToken, ImGuiSelectableFlags.SpanAllColumns);
                         ImGui.Spacing();
-                        ImGui.Selectable("Settings", onboardingStep == OnboardingStep.Settings, ImGuiSelectableFlags.SpanAllColumns);
+                        ImGui.Selectable(stepSettings, onboardingStep == OnboardingStep.Settings, ImGuiSelectableFlags.SpanAllColumns);
                     }
 
                     ImGui.PopStyleVar();
@@ -120,13 +145,13 @@ namespace Dalamud.Tomestone.UI
             if (ImGui.Button("Create Account"))
             {
                 // Open "https://tomestone.gg/register" in the default browser
-                Utils.OpenUrl("https://tomestone.gg/register");
+                Utils.OpenLink("https://tomestone.gg/register");
             }
 
             if (ImGui.Button("Claim Character"))
             {
                 // Open "https://tomestone.gg/import/character" in the default browser
-                Utils.OpenUrl("https://tomestone.gg/import/character");
+                Utils.OpenLink("https://tomestone.gg/import/character");
             }
             ImGui.Spacing();
             ImGui.TextWrapped($"After you have claimed your character, please click the button below to continue.");
@@ -146,7 +171,7 @@ namespace Dalamud.Tomestone.UI
             if (ImGui.Button("Open Tomestone Account Settings"))
             {
                 // Open "https://tomestone.gg/profile/account" in the default browser
-                Utils.OpenUrl("https://tomestone.gg/profile/account");
+                Utils.OpenLink("https://tomestone.gg/profile/account");
             }
             ImGui.Spacing();
             if (ImGui.InputText("Dalamud Access Token", ref dalamudToken, 64, ImGuiInputTextFlags.None))
@@ -201,7 +226,7 @@ namespace Dalamud.Tomestone.UI
                             if (ImGui.Button("Claim Character"))
                             {
                                 // Open "https://tomestone.gg/import/character" in the default browser
-                                Utils.OpenUrl("https://tomestone.gg/import/character");
+                                Utils.OpenLink("https://tomestone.gg/import/character");
                             }
 
                             if (ImGui.Button("Refresh"))
@@ -224,6 +249,7 @@ namespace Dalamud.Tomestone.UI
             bool sendActivity = Tomestone.T.Configuration.SendActivity;
             bool sendGear = Tomestone.T.Configuration.SendGear;
             bool sendTriad = Tomestone.T.Configuration.SendTriad;
+            bool sendOrchestrion = Tomestone.T.Configuration.SendOrchestrion;
 
             ImGui.TextWrapped($"Before we finish, check which data you want to send to {Tomestone.T.Name}.");
             ImGui.Separator();
@@ -234,7 +260,7 @@ namespace Dalamud.Tomestone.UI
                 Tomestone.T.Configuration.SendActivity = sendActivity;
                 Tomestone.T.Configuration.Save();
             }
-            ImGuiComponents.HelpMarker("If enabled, Tomestone will send your activity data to Tomestone.gg. This includes your current job, level, zone and if you are traveling to another world.");
+            ImGuiComponents.HelpMarker("If enabled, Tomestone will send your activity data to Tomestone.gg. This includes your current job, level, zone and if you are traveling to another world. This is NOT displayed on your activity page, but used for the streams list.");
 
             if (ImGui.Checkbox("Send gear data to Tomestone.gg", ref sendGear))
             {
@@ -249,6 +275,13 @@ namespace Dalamud.Tomestone.UI
                 Tomestone.T.Configuration.Save();
             }
             ImGuiComponents.HelpMarker("If enabled, Tomestone will send your Triple Triad card data to Tomestone.gg.");
+
+            if (ImGui.Checkbox("Send Orchestrion data to Tomestone.gg", ref sendOrchestrion))
+            {
+                Tomestone.T.Configuration.SendOrchestrion = sendOrchestrion;
+                Tomestone.T.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("If enabled, Tomestone will send your Orchestrion roll data to Tomestone.gg.");
 
             ImGui.Separator();
             if (ImGui.Button("Finish"))
