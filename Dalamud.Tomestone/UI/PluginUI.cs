@@ -15,6 +15,11 @@ namespace Dalamud.Tomestone.UI
         public OpenWindow OpenWindow { get; set; }
 
         private string? imageHint;
+        internal string? debug_welcome;
+        internal string? debug_header_generalInformation;
+        internal string? debug_header_dalamudInformation;
+        internal string? debug_header_settings;
+        internal string? debug_header_actions;
         private bool hasCachedLocStrings;
 
         public PluginUI() : base($"{Tomestone.T.Name} {Tomestone.T.GetType().Assembly.GetName().Version}###Tomestone")
@@ -45,6 +50,11 @@ namespace Dalamud.Tomestone.UI
 
             // Update the strings
             imageHint = Localization.Localize("MAIN_ImageHint", "Have a Tomestone!");
+            debug_welcome = Localization.Localize("MAIN_DebugWelcome", "Welcome to the debug menu! Here you can find some useful information and settings for debugging purposes.");
+            debug_header_generalInformation = Localization.Localize("MAIN_DebugHeaderGeneralInformation", "General Information");
+            debug_header_dalamudInformation = Localization.Localize("MAIN_DebugHeaderDalamudInformation", "Dalamud Information");
+            debug_header_settings = Localization.Localize("MAIN_DebugHeaderSettings", "Debug Settings");
+            debug_header_actions = Localization.Localize("MAIN_DebugHeaderActions", "Debug Actions");
         }
 
         public override void Draw()
@@ -120,7 +130,7 @@ namespace Dalamud.Tomestone.UI
                                 Settings.Draw();
                                 break;
                             case OpenWindow.Debug:
-                                Debug.Draw();
+                                Debug.Draw(this);
                                 break;
                         }
                     }

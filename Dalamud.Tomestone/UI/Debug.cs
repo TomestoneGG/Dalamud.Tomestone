@@ -1,35 +1,30 @@
 using ImGuiNET;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone.UI
 {
     internal static class Debug
     {
-        internal static void Draw()
+        internal static void Draw(PluginUI r)
         {
             bool firstLaunch = Tomestone.T.Configuration.IsFirstLaunch;
 
-            ImGui.TextWrapped($"Welcome to the debug menu! Here you can find some useful information and settings for debugging purposes.");
+            ImGui.TextWrapped(r.debug_welcome);
 
             ImGui.Separator();
 
-            if (ImGui.CollapsingHeader("General Information"))
+            if (ImGui.CollapsingHeader(r.debug_header_generalInformation))
             {
                 ImGui.TextWrapped($"Tomestone is currently {(Tomestone.T.Configuration.Enabled ? "enabled" : "disabled")}.");
                 ImGui.TextWrapped($"Tomestone is currently {(Tomestone.T.Configuration.SendActivity ? "sending activity data" : "not sending activity data")}.");
                 ImGui.TextWrapped($"Tomestone is currently {(firstLaunch ? "running for the first time" : "not running for the first time")}.");
             }
 
-            if (ImGui.CollapsingHeader("Dalamud Information"))
+            if (ImGui.CollapsingHeader(r.debug_header_dalamudInformation))
             {
                 ImGui.TextWrapped($"Your Dalamud access token is currently set to: {Tomestone.T.Configuration.DalamudToken}");
             }
 
-            if (ImGui.CollapsingHeader("Debug Settings"))
+            if (ImGui.CollapsingHeader(r.debug_header_settings))
             {
                 if (ImGui.Button("Reset First Launch"))
                 {
@@ -51,10 +46,16 @@ namespace Dalamud.Tomestone.UI
                     Tomestone.T.Configuration.DalamudToken = string.Empty;
                     Tomestone.T.Configuration.Save();
                 }
+                ImGui.Separator();
+                if (ImGui.Button("Set Character Unclaimed"))
+                {
+                    Tomestone.T.Configuration.CharacterClaimed = false;
+                    Tomestone.T.Configuration.Save();
+                }
             }
 
             // TODO: Add more debug actions here
-            if (ImGui.CollapsingHeader("Debug Actions"))
+            if (ImGui.CollapsingHeader(r.debug_header_actions))
             {
                 if (ImGui.Button("Send Test Activity"))
                 {

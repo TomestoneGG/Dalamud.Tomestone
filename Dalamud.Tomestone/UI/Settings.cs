@@ -9,6 +9,8 @@ namespace Dalamud.Tomestone.UI
     {
         internal static void Draw()
         {
+            bool modifyUI = Tomestone.T.Configuration.ModifyUI;
+
             bool enabled = Tomestone.T.Configuration.Enabled;
             string dalamudToken = Tomestone.T.Configuration.DalamudToken;
 
@@ -16,6 +18,7 @@ namespace Dalamud.Tomestone.UI
             bool sendGear = Tomestone.T.Configuration.SendGear;
             bool sendTriad = Tomestone.T.Configuration.SendTriad;
             bool sendOrchestrion = Tomestone.T.Configuration.SendOrchestrion;
+            bool sendBlueMage = Tomestone.T.Configuration.SendBlueMage;
 
             ImGui.TextWrapped($"Here you can change some settings Tomestone will use.");
             ImGui.TextWrapped($"In order to use Tomestone, please claim your character and set your Dalamud access token first!");
@@ -64,6 +67,19 @@ namespace Dalamud.Tomestone.UI
                 ImGuiComponents.HelpMarker("This is your Dalamud access token. You can generate it in the Tomestone settings under the 'Dalamud access token' section.");
             }
 
+            if (ImGui.CollapsingHeader("Plugin Settings"))
+            {
+                ImGui.TextWrapped("Here you can change some settings regarding the plugin.");
+                ImGui.Separator();
+
+                if (ImGui.Checkbox("Enable UI modifications", ref modifyUI))
+                {
+                    Tomestone.T.Configuration.ModifyUI = modifyUI;
+                    Tomestone.T.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker("If enabled, Tomestone will add UI elements to the game.");
+            }
+
             if (Tomestone.T.Configuration.Enabled && !string.IsNullOrEmpty(Tomestone.T.Configuration.DalamudToken))
             {
                 if (ImGui.CollapsingHeader("Data Settings"))
@@ -98,6 +114,13 @@ namespace Dalamud.Tomestone.UI
                         Tomestone.T.Configuration.Save();
                     }
                     ImGuiComponents.HelpMarker("If enabled, Tomestone collects your Orchestrion roll data.");
+
+                    if (ImGui.Checkbox("Blue Mage spell data", ref sendBlueMage))
+                    {
+                        Tomestone.T.Configuration.SendBlueMage = sendBlueMage;
+                        Tomestone.T.Configuration.Save();
+                    }
+                    ImGuiComponents.HelpMarker("If enabled, Tomestone collects your Blue Mage spell data.");
                 }
             }
         }

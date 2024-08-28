@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone
@@ -140,22 +139,14 @@ namespace Dalamud.Tomestone
             // Update all data that might change less frequently
             HandleTripleTriadState();
             HandleOrchestrionState();
-
+            HandleBlueMageState();
 #if DEBUG
             // These aren't in the official Plugin yet (lack an endpoint)
-            HandleBlueMageState();
-
             HandleJobState();
-
             HandleMountState();
-
             HandleMinionState();
-
             HandleAchievementState();
-
             HandleFishState();
-
-            // HandleGearsetState();
 #endif
             // Set the last update time to now
             status.lastUpdate = DateTime.Now;
@@ -321,10 +312,27 @@ namespace Dalamud.Tomestone
         {
             try
             {
+                if (this.plugin.Configuration.Enabled == false || this.plugin.Configuration.SendBlueMage == false)
+                {
+                    return;
+                }
+
                 // Get the blue mage spells from the player state
                 var spells = Features.BlueMage.CheckLearnedSpells();
 
-                Service.Log.Debug($"Player has {spells.Count} Blue Mage spells.");
+                if (spells == null)
+                {
+                    return;
+                }
+
+                // Build a DTO object with the spell IDs
+                var spellDTO = new BlueMageDTO
+                {
+                    spells = spells
+                };
+
+                // Send the spell data to the server
+                api.DoRequest(() => api.SendBlueMageSpells(player.name, player.world, spellDTO));
             }
             catch (Exception ex)
             {

@@ -53,7 +53,7 @@ namespace Dalamud.Tomestone
 
         public static void OnOpenContextMenu(IMenuOpenedArgs menuOpenedArgs)
         {
-            if (!Service.PluginInterface.UiBuilder.ShouldModifyUi || !IsMenuValid(menuOpenedArgs)) return;
+            if (!Service.PluginInterface.UiBuilder.ShouldModifyUi || !Tomestone.T.Configuration.ModifyUI || !IsMenuValid(menuOpenedArgs)) return;
 
             menuOpenedArgs.AddMenuItem(new MenuItem
             {

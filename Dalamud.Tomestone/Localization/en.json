@@ -13,5 +13,20 @@
     },
     "MAIN_ImageHint": {
         "message": "Have a Tomestone!"
+    },
+    "DEBUG_Welcome": {
+        "message": "Welcome to the debug menu! Here you can find some useful information and settings for debugging purposes."
+    },
+    "DEBUG_HEADER_GeneralInformation": {
+        "message": "General Information"
+    },
+    "DEBUG_HEADER_DalamudInformation": {
+        "message": "Dalamud Information"
+    },
+    "DEBUG_HEADER_Settings": {
+        "message": "Debug Settings"
+    },
+    "DEBUG_HEADER_Actions": {
+        "message": "Debug Actions"
     }
 }

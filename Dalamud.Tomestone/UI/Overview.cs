@@ -21,6 +21,7 @@ namespace Dalamud.Tomestone.UI
             ImGui.BulletText("Gear: Collects your current Gear (Including Materia, Dye and Glamour).");
             ImGui.BulletText("Triple Triad: Collects your Triple Triad Card Collection.");
             ImGui.BulletText("Orchestrion: Collects your Orchestrion Roll Collection.");
+            ImGui.BulletText("Blue Mage: Collects your Blue Mage Spell Collection.");
         }
     }
 }
