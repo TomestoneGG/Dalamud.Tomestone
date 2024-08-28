@@ -246,13 +246,23 @@ namespace Dalamud.Tomestone.UI
 
         private void DrawSettings()
         {
+            bool modifyUI = Tomestone.T.Configuration.ModifyUI;
+
             bool sendActivity = Tomestone.T.Configuration.SendActivity;
             bool sendGear = Tomestone.T.Configuration.SendGear;
             bool sendTriad = Tomestone.T.Configuration.SendTriad;
             bool sendOrchestrion = Tomestone.T.Configuration.SendOrchestrion;
+            bool sendBlueMage = Tomestone.T.Configuration.SendBlueMage;
 
-            ImGui.TextWrapped($"Before we finish, check which data you want to send to {Tomestone.T.Name}.");
+            ImGui.TextWrapped($"Before we finish, set up some settings and check which data you want to send to {Tomestone.T.Name}.");
             ImGui.Separator();
+
+            if (ImGui.Checkbox("Enable UI modifications", ref modifyUI))
+            {
+                Tomestone.T.Configuration.ModifyUI = modifyUI;
+                Tomestone.T.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("If enabled, Tomestone will add UI elements to the game.");
 
             // TODO: Make sure wording here equals the wording on the plugin settings page
             if (ImGui.Checkbox("Send activity data to Tomestone.gg", ref sendActivity))
@@ -283,6 +293,13 @@ namespace Dalamud.Tomestone.UI
             }
             ImGuiComponents.HelpMarker("If enabled, Tomestone will send your Orchestrion roll data to Tomestone.gg.");
 
+            if (ImGui.Checkbox("Send Blue Mage spell data to Tomestone.gg", ref sendBlueMage))
+            {
+                Tomestone.T.Configuration.SendBlueMage = sendBlueMage;
+                Tomestone.T.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("If enabled, Tomestone will send your Blue Mage spell data to Tomestone.gg.");
+
             ImGui.Separator();
             if (ImGui.Button("Finish"))
             {
@@ -292,19 +309,9 @@ namespace Dalamud.Tomestone.UI
 
         private void DrawFinish()
         {
-            // TODO: Implement some kind of initial data transfer, e.g. send character data to Tomestone.gg, so we can make sure the user has everything set up correctly
-            //bool checkDataTransfer = false;
-            //if (!checkDataTransfer)
-            //{
-            //    ImGui.TextWrapped($"Please wait a moment while we set up {Tomestone.T.Name} for you. This should only take a few seconds.");
-            //    ImGui.TextWrapped($"If everything is set up correctly, the window will close automatically.");
-            //}
-            //else
-            //{
-                Tomestone.T.Configuration.IsFirstLaunch = false;
-                Tomestone.T.Configuration.Save();
-                this.Toggle();
-            //}
+            Tomestone.T.Configuration.IsFirstLaunch = false;
+            Tomestone.T.Configuration.Save();
+            this.Toggle();
         }
     }
 

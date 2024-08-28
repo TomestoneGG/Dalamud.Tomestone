@@ -1,10 +1,11 @@
 using Dalamud.Configuration;
-using Dalamud.Plugin;
 using Dalamud.Utility;
 using System;
 using System.Reflection;
 
 namespace Dalamud.Tomestone;
+
+
 
 [Serializable]
 public class Configuration : IPluginConfiguration
@@ -17,16 +18,18 @@ public class Configuration : IPluginConfiguration
     public bool TokenValid { get; set; } = false;
     public bool CharacterClaimed { get; set; } = true;
 
-    // Enables/Disables all data sending to tomestone.gg
+    #region Plugin settings
+    public bool ModifyUI { get; set; } = true;
+    #endregion
+
+    #region Data settings
     public bool Enabled { get; set; } = true;
-    // Enables/Disables sending activity data
     public bool SendActivity { get; set; } = true;
-    // Enables/Disables sending current gear data
     public bool SendGear { get; set; } = true;
-    // Enables/Disables sending triad card data
     public bool SendTriad { get; set; } = true;
-    // Enables/Disables sending orchestrion data
     public bool SendOrchestrion { get; set; } = true;
+    public bool SendBlueMage { get; set; } = true;
+    #endregion
 
     public string ContextMenuButtonName { get; set; } = "Open Tomestone";
 

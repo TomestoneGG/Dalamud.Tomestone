@@ -80,7 +80,8 @@ namespace Dalamud.Tomestone.API
                     e = await request();
                     HandleAPIError(e);
 
-                    if (!this.c.TokenChecked)
+                    // Since we reached here, we can assume the token is valid and the character is claimed
+                    if (!this.c.TokenChecked || !this.c.TokenValid || !this.c.CharacterClaimed)
                     {
                         this.c.TokenChecked = true;
                         this.c.TokenValid = true;
@@ -323,6 +324,53 @@ namespace Dalamud.Tomestone.API
                 }
 
                 return new APIError { IsError = true, ErrorMessage = $"Orchestrion Rolls ({response.StatusCode})" };
+            }
+
+            return null;
+        }
+
+        private const string BLUE_MAGE_ENDPOINT = @"{0}/update-blue-mage-spells/{1}/{2}";
+        public async Task<APIError?> SendBlueMageSpells(string playerName, string worldName, BlueMageDTO payload)
+        {
+            // Ensure playerName and worldName are not empty
+            if (playerName == "" || worldName == "")
+            {
+                return new APIError { IsError = true, ErrorMessage = "Player name or world name is empty." };
+            }
+
+            // Lowercase the player and world name, just to be sure
+            playerName = playerName.ToLower();
+            worldName = worldName.ToLower();
+
+            // URL Encode the Player Name
+            playerName = Uri.EscapeDataString(playerName);
+
+            // Serialize the payload to JSON
+            string json = JsonConvert.SerializeObject(payload);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            // Build the URL
+            var url = string.Format(BLUE_MAGE_ENDPOINT, API_URL, playerName, worldName);
+
+#if DEBUG
+            Service.Log.Debug($"POST {url}: {json}");
+#endif
+
+            // Send the request
+            var response = await this.client.PostAsync(url, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    return new APIError { IsError = true, ErrorType = APIErrorType.UnclaimedCharacter, ErrorMessage = $"Character {playerName} on {worldName} is not claimed." };
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return new APIError { IsError = true, ErrorType = APIErrorType.InvalidToken, ErrorMessage = "Invalid API key." };
+                }
+
+                return new APIError { IsError = true, ErrorMessage = $"Blue Mage Spells ({response.StatusCode})" };
             }
 
             return null;

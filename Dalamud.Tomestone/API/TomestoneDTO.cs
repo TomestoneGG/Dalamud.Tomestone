@@ -1,8 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone.API
 {
@@ -24,5 +20,10 @@ namespace Dalamud.Tomestone.API
     internal class OrchestrionDTO
     {
         public List<uint> rolls { get; set; } = new List<uint>();
+    }
+
+    internal class BlueMageDTO
+    {
+        public List<uint> spells { get; set; } = new List<uint>();
     }
 }
