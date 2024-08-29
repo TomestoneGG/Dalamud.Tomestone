@@ -21,11 +21,14 @@ namespace Dalamud.Tomestone.Features
         }
 
         // Obtains all character information we can get using Dalamud
-        internal unsafe static Models.Player GetCharacterInfo(IPlayerCharacter localPlayer)
+        internal unsafe static Models.Player GetCharacterInfo(Models.Player player, IPlayerCharacter localPlayer)
         {
-            var result = new Models.Player();
+            Models.Player result = (Models.Player)player.Clone();
             result.name = localPlayer.Name.ToString();
-            result.currentJobLevel = (uint)localPlayer.Level;
+            if (!player.isLevelSynced)
+                result.currentJobLevel = (uint)localPlayer.Level;
+            else
+                result.currentJobLevel = player.currentJobLevel;
 
             var world = localPlayer.HomeWorld.GetWithLanguage(Game.ClientLanguage.English);
             if (world == null)

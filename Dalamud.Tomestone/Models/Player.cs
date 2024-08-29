@@ -1,14 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-/* Organization TODO's */
-// TODO: Remove properties that are not needed (e.g. achievements, fish, minions, mounts - those will be fully sent to the server and don't need state tracking)
-// TODO: Move gearsets, etc. to a seperate file
-// TODO: Move DTOs to a seperate file
-
 /* Feature TODO's */
-// TODO: List of unlocked orchestrion rolls
-// TODO: List of unlocked Blue Mage spells
 // TODO: List of unlocked Hairstyles
 // TODO: List of unlocked Armoire items
 // TODO: List of unlocked Fashion accessories
@@ -17,7 +10,6 @@ using System.Collections.Generic;
 // TODO: List of obtained Triple Triad cards
 // TODO: List of completed Triple Triad NPCs
 // TODO: List of obtained Chocobo Bardings
-// TODO: Relic weapons
 
 namespace Dalamud.Tomestone.Models
 {
@@ -36,5 +28,10 @@ namespace Dalamud.Tomestone.Models
         public uint areaPlaceNameId { get; set; } = 0; // Sub region ID
         public uint subAreaPlaceNameId { get; set; } = 0; // Sub sub region ID
         public string currentWorldName { get; set; } = string.Empty; // Current world name
+        public bool isLevelSynced { get; set; } = false; // Whether the player is level synced
+        public object Clone()
+        {
+           return this.MemberwiseClone();
+        }
     }
 }

@@ -8,6 +8,8 @@ namespace Dalamud.Tomestone.Models
     {
         public uint jobId { get; set; } = 0;
         public uint itemLevel { get; set; } = 0;
+        [JsonIgnore]
+        public bool isItemLevelSynced { get; set; } = false;
         public List<Attribute> attributes { get; set; } = new List<Attribute>();
         public List<Item> items { get; set; } = new List<Item>();
     }

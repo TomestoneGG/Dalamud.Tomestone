@@ -4,6 +4,7 @@ using System;
 using Lumina.Excel.GeneratedSheets;
 using System.Collections.Generic;
 using System.Linq;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 
 namespace Dalamud.Tomestone
 {
@@ -131,9 +132,7 @@ namespace Dalamud.Tomestone
                 {
                     continue;
                 }
-
-                
-
+             
                 var materiaGrade = materiaGradeArray[j];            
 
                 item.materia ??= new List<Models.Materia>();

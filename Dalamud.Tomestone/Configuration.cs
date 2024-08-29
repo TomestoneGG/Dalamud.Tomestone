@@ -1,4 +1,5 @@
 using Dalamud.Configuration;
+using Dalamud.Tomestone.API;
 using Dalamud.Utility;
 using System;
 using System.Reflection;
@@ -33,8 +34,18 @@ public class Configuration : IPluginConfiguration
 
     public string ContextMenuButtonName { get; set; } = "Open Tomestone";
 
+    [NonSerialized]
+    internal RemoteConfigDTO RemoteConfig = new RemoteConfigDTO();
+
     public static readonly string VersionString = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
     public static readonly string DalamudVersion = Util.AssemblyVersion;
+
+    // TODO
+    public void ManualSave()
+    {
+        // TODO: When saving manually, we will also check if the config should be saved to the server.
+        Tomestone.PluginInterface.SavePluginConfig(this);
+    }
 
     // the below exist just to make saving less cumbersome
     public void Save()

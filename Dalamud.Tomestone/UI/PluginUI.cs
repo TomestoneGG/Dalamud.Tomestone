@@ -17,6 +17,7 @@ namespace Dalamud.Tomestone.UI
         private string? imageHint;
         internal string? debug_welcome;
         internal string? debug_header_generalInformation;
+        internal string? debug_header_remoteConfig;
         internal string? debug_header_dalamudInformation;
         internal string? debug_header_settings;
         internal string? debug_header_actions;
@@ -52,6 +53,7 @@ namespace Dalamud.Tomestone.UI
             imageHint = Localization.Localize("MAIN_ImageHint", "Have a Tomestone!");
             debug_welcome = Localization.Localize("MAIN_DebugWelcome", "Welcome to the debug menu! Here you can find some useful information and settings for debugging purposes.");
             debug_header_generalInformation = Localization.Localize("MAIN_DebugHeaderGeneralInformation", "General Information");
+            debug_header_remoteConfig = Localization.Localize("MAIN_DebugHeaderRemoteConfig", "Remote Configuration");
             debug_header_dalamudInformation = Localization.Localize("MAIN_DebugHeaderDalamudInformation", "Dalamud Information");
             debug_header_settings = Localization.Localize("MAIN_DebugHeaderSettings", "Debug Settings");
             debug_header_actions = Localization.Localize("MAIN_DebugHeaderActions", "Debug Actions");

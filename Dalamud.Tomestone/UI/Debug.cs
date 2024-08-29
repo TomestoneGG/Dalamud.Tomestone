@@ -24,6 +24,16 @@ namespace Dalamud.Tomestone.UI
                 ImGui.TextWrapped($"Your Dalamud access token is currently set to: {Tomestone.T.Configuration.DalamudToken}");
             }
 
+            if (ImGui.CollapsingHeader(r.debug_header_remoteConfig))
+            {
+                ImGui.TextWrapped($"Enabled?: {Tomestone.T.Configuration.RemoteConfig.enabled}");
+                ImGui.TextWrapped($"Send Activity?: {Tomestone.T.Configuration.RemoteConfig.sendActivity}");
+                ImGui.TextWrapped($"Send Gear?: {Tomestone.T.Configuration.RemoteConfig.sendGearSets}");
+                ImGui.TextWrapped($"Send Triad?: {Tomestone.T.Configuration.RemoteConfig.sendTripleTriad}");
+                ImGui.TextWrapped($"Send Orchestrion?: {Tomestone.T.Configuration.RemoteConfig.sendOrchestrionRolls}");
+                ImGui.TextWrapped($"Send Blue Mage?: {Tomestone.T.Configuration.RemoteConfig.sendBlueMageSpells}");
+            }
+
             if (ImGui.CollapsingHeader(r.debug_header_settings))
             {
                 if (ImGui.Button("Reset First Launch"))

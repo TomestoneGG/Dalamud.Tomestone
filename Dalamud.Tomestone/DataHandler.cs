@@ -1,6 +1,7 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Tomestone.API;
 using Dalamud.Tomestone.Models;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using NetStone;
 using NetStone.Model.Parseables.Character.Achievement;
@@ -17,9 +18,7 @@ namespace Dalamud.Tomestone
         // Current status
         public bool updating = false;
         // Last update status
-        internal bool UpdateError = false;
         internal DateTime lastUpdate = DateTime.MinValue;
-        internal string UpdateMessage = String.Empty;
     }
 
     /// <summary>
@@ -63,7 +62,7 @@ namespace Dalamud.Tomestone
         public void HandleFrameworkUpdate(IPlayerCharacter? localPlayer)
         {
             // Check if the last update was less than 5 seconds ago
-            if (DateTime.Now - lastHandledFrameworkUpdate < TimeSpan.FromSeconds(5))
+            if (DateTime.Now - lastHandledFrameworkUpdate < TimeSpan.FromSeconds(plugin.Configuration.RemoteConfig.updateFrameworkInterval))
             {
                 return;
             }
@@ -83,7 +82,10 @@ namespace Dalamud.Tomestone
                 return;
             }
 
-            var playerData = Features.Player.GetCharacterInfo(localPlayer);
+            GetPlayerState();
+            GetUIState();
+
+            var playerData = Features.Player.GetCharacterInfo(player, localPlayer);
             if (!plugin.Configuration.TokenChecked)
             {
                 if (plugin.Configuration.DalamudToken == null || plugin.Configuration.DalamudToken == "")
@@ -92,16 +94,11 @@ namespace Dalamud.Tomestone
                 }
                 Service.Log.Info("Token not checked, checking now.");
 
-                GetPlayerState();
-                GetUIState();
                 // Check if the token is valid by sending activity data
                 HandleTokenChange(playerData);
             }
             else if (player.currentJobId != (uint)currentJob.RowId || player.currentJobLevel != (uint)localPlayer.Level || player.areaPlaceNameId != playerData.areaPlaceNameId || player.subAreaPlaceNameId != playerData.subAreaPlaceNameId)
             {
-                GetPlayerState();
-                GetUIState();
-
                 // Check for changes in the player state and send if needed
                 HandlePlayerState(playerData);
             }
@@ -114,14 +111,35 @@ namespace Dalamud.Tomestone
             }
         }
 
+        /// <summary>
+        /// This just prints the current content ID
+        /// TODO: This should return true/false if the content causes our gear to iLvl sync
+        /// </summary>
+        //private unsafe void CheckContent()
+        //{
+        //    var contentDirector = EventFramework.Instance()->GetContentDirector();
+        //    if (contentDirector == null)
+        //    {
+        //        return;
+        //    }
+
+        //    var id = contentDirector->ContentId;
+        //    Service.Log.Info($"Content ID: {id}");
+        //}
+
         public void Update(IPlayerCharacter localPlayer)
         {
+            // Check if the plugin is enabled
+            if (!plugin.Configuration.Enabled || !plugin.Configuration.RemoteConfig.enabled)
+            {
+                return;
+            }
 
             GetPlayerState();
             GetUIState();
 
             // Grab character name, job, level territory and traveling data to send to the backend
-            var playerData = Features.Player.GetCharacterInfo(localPlayer);
+            var playerData = Features.Player.GetCharacterInfo(player, localPlayer);
 
             // Check for changes in the player state and send if needed
             HandlePlayerState(playerData);
@@ -130,9 +148,9 @@ namespace Dalamud.Tomestone
             HandleGearState(localPlayer);
 
             // Check if the last update was less than 30 minutes ago
-            if (DateTime.Now - status.lastUpdate < TimeSpan.FromMinutes(30))
+            if (DateTime.Now - status.lastUpdate < TimeSpan.FromSeconds(plugin.Configuration.RemoteConfig.updateFullInterval))
             {
-                Service.Log.Info("Skipping update, last update was less than 30 minutes ago.");
+                Service.Log.Info($"Skipping collections update, last update was less than {plugin.Configuration.RemoteConfig.updateFullInterval} seconds ago.");
                 return;
             }
 
@@ -160,6 +178,9 @@ namespace Dalamud.Tomestone
                 // Throw an exception if the player state is null
                 throw new Exception("Failed to get player state.");
             }
+
+            // Check if the player is currently level synced
+            this.player.isLevelSynced = Convert.ToBoolean(this.playerState->IsLevelSynced);
         }
 
         private unsafe void GetUIState()
@@ -248,7 +269,7 @@ namespace Dalamud.Tomestone
         {
             try
             {
-                if (this.plugin.Configuration.Enabled == false || this.plugin.Configuration.SendTriad == false)
+                if (!plugin.Configuration.SendTriad || !plugin.Configuration.RemoteConfig.sendTripleTriad)
                 {
                     return;
                 }
@@ -280,7 +301,7 @@ namespace Dalamud.Tomestone
         {
             try
             {
-                if (this.plugin.Configuration.Enabled == false || this.plugin.Configuration.SendOrchestrion == false)
+                if (!plugin.Configuration.SendOrchestrion || !plugin.Configuration.RemoteConfig.sendOrchestrionRolls)
                 {
                     return;
                 }
@@ -312,7 +333,7 @@ namespace Dalamud.Tomestone
         {
             try
             {
-                if (this.plugin.Configuration.Enabled == false || this.plugin.Configuration.SendBlueMage == false)
+                if (!plugin.Configuration.SendBlueMage || !plugin.Configuration.RemoteConfig.sendBlueMageSpells)
                 {
                     return;
                 }
@@ -418,10 +439,20 @@ namespace Dalamud.Tomestone
 
         private unsafe void HandleGearState(IPlayerCharacter localPlayer)
         {
-            if (this.plugin.Configuration.Enabled == false || this.plugin.Configuration.SendGear == false)
+            if (player.isLevelSynced || !plugin.Configuration.SendGear || !plugin.Configuration.RemoteConfig.sendGearSets)
             {
                 return;
             }
+
+            // Ensure we aren't in a PvP area, since this would mess up attribute data
+            if (Service.ClientState.IsPvP || this.player.currentZoneId == 250)
+            {
+                Service.Log.Debug("Player is in a PvP area, skipping gear update.");
+                return;
+            }
+
+            // TODO: Ensure we aren't level synced, since this would mess up attribute data
+            // TOOD: Ensure we aren't in Bozja/Eureka/Deep Dungeon, since this would mess up attribute data
 
             // Get the gearsets from the player state
             var gear = Features.Gear.GetGear(localPlayer, this.playerState);

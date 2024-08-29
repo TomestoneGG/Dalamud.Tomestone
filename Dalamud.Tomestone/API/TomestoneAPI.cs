@@ -27,11 +27,31 @@ namespace Dalamud.Tomestone.API
 
         private HttpClient client;
         private Configuration c;
+        private Task? updateRemoteConfigTask;
 
         public TomestoneAPI(Configuration c)
         {
             this.client = new HttpClient();
             this.c = c; // Reference to the configuration, so we can get the API key
+            // Update the remote config on init and every 30 minutes
+            updateRemoteConfigTask = new Task(async () =>
+            {
+                while (true)
+                {
+                    this.UpdateRemoteConfig();
+                    await Task.Delay(1800000); // 30 minutes              
+                }
+            });
+
+            updateRemoteConfigTask.Start();
+        }
+
+        public void Dispose()
+        {
+            if (this.updateRemoteConfigTask != null)
+                this.updateRemoteConfigTask.Dispose();
+            if (client != null)
+                this.client.Dispose();
         }
 
         private void HandleAPIError(APIError? e)
@@ -141,7 +161,43 @@ namespace Dalamud.Tomestone.API
             return null;
         }
 
-        private const string ACTIVITY_ENDPOINT = @"{0}/update-activity/{1}/{2}";
+        private void UpdateRemoteConfig()
+        {
+            // TODO: Get Remote configuration from the server
+            DoRequest(() => GetSettings());
+            // TODO: Check if local configuration is different from default configuration or remote configuration
+            // If it is, send the local configuration to the server
+        }
+
+        private static readonly string GET_SETTINGS_ENDPOINT = @"{0}/settings";
+        private async Task<APIError?> GetSettings()
+        {
+            var url = string.Format(GET_SETTINGS_ENDPOINT, API_URL);
+            var response = await this.client.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return new APIError { IsError = true, ErrorType = APIErrorType.InvalidToken, ErrorMessage = "Invalid API key." };
+                }
+
+                return new APIError { IsError = true, ErrorType = APIErrorType.GenericError, ErrorMessage = $"Settings ({response.StatusCode})" };
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            var remoteConfig = JsonConvert.DeserializeObject<RemoteConfigDTO>(json);
+
+            if (remoteConfig != null)
+            {
+                this.c.RemoteConfig = remoteConfig;
+            }
+
+            return null;
+        }
+
+        private static readonly string UPDATE_SETTINGS_ENDPOINT = @"{0}/update-settings";
+
+        private static readonly string ACTIVITY_ENDPOINT = @"{0}/update-activity/{1}/{2}";
         public async Task<APIError?> SendActivity(string playerName, string worldName, ActivityDTO payload)
         {
             // Ensure playerName and worldName are not empty
