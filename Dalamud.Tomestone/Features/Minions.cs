@@ -10,25 +10,15 @@ namespace Dalamud.Tomestone.Features
 {
     internal static class Minions
     {
-        internal static unsafe List<uint> GetUnlockedMinions(UIState* uiState)
+        internal static unsafe List<uint> GetUnlockedMinions(UIState* uiState, List<uint> cache)
         {
             List<uint> unlockedMinions = new List<uint>();
-            // Ensure UIState is initialized
-            if (uiState == null)
-            {
-                return unlockedMinions;
-            }
 
-            Lumina.Excel.ExcelSheet<Companion>? minionSheet = Service.DataManager.GetExcelSheet<Companion>();
-            if (minionSheet == null)
+            foreach (var minionId in cache)
             {
-                return unlockedMinions;
-            }
-            foreach (var row in minionSheet)
-            {
-                if (uiState->IsCompanionUnlocked(row.RowId))
+                if (uiState->IsCompanionUnlocked(minionId))
                 {
-                    unlockedMinions.Add(row.RowId);
+                    unlockedMinions.Add(minionId);
                 }
             }
 

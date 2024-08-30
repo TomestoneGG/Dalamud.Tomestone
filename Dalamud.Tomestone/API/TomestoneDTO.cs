@@ -15,6 +15,7 @@ namespace Dalamud.Tomestone.API
         public bool sendTripleTriad { get; set; } = true; // Whether sending Triple Triad data is enabled.
         public bool sendOrchestrionRolls { get; set; } = true; // Whether sending Orchestrion data is enabled.
         public bool sendBlueMageSpells { get; set; } = true; // Whether sending Blue Mage data is enabled.
+        public bool sendChocoboBardings { get; set; } = false; // Whether sending Chocobo Barding data is enabled.
         public int updateFrameworkInterval { get; set; } = 5; // How often to send framework updates in seconds.
         public int updateFullInterval { get; set; } = 1800; // How often to send a full update in seconds.
         // Plugin settings
@@ -56,5 +57,13 @@ namespace Dalamud.Tomestone.API
     internal class BlueMageDTO
     {
         public List<uint> spells { get; set; } = new List<uint>();
+    }
+
+    /// <summary>
+    /// Represents a players owned Chocobo Barding sent to the server.
+    /// </summary>
+    internal class ChocoboBardingDTO
+    {
+        public List<uint> bardings { get; set; } = new List<uint>();
     }
 }

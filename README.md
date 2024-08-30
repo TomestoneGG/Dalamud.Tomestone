@@ -25,7 +25,7 @@ This plugin is a work in progress and is not yet ready for production use.
     - [ ] Emotes
     - [ ] Fashion Accessories
     - [ ] Hairstyles
-    - [ ] Chocobo Bardings
+    - [x] Chocobo Bardings
     - [ ] Framer Kits
     - [ ] Research: read/screenshot Adventure Plate
 - [x] Sends data to Tomestone.gg
@@ -35,10 +35,10 @@ This plugin is a work in progress and is not yet ready for production use.
     - [ ] Mounts
     - [ ] Fish
     - [ ] Minions
-    - [ ] Orchestrion Rolls
+    - [x] Orchestrion Rolls
     - [x] Triple Triad Cards
     - [ ] Triple Triad NPCs
-    - [ ] Blue Magic Spells
+    - [x] Blue Magic Spells
     - [ ] Emotes
     - [ ] Fashion Accessories
     - [ ] Hairstyles

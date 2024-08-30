@@ -431,5 +431,52 @@ namespace Dalamud.Tomestone.API
 
             return null;
         }
+
+        private const string CHOCOBO_BARDING_ENDPOINT = @"{0}/update-chocobo-bardings/{1}/{2}";
+        public async Task<APIError?> SendChocoboBardings(string playerName, string worldName, ChocoboBardingDTO payload)
+        {
+            // Ensure playerName and worldName are not empty
+            if (playerName == "" || worldName == "")
+            {
+                return new APIError { IsError = true, ErrorMessage = "Player name or world name is empty." };
+            }
+
+            // Lowercase the player and world name, just to be sure
+            playerName = playerName.ToLower();
+            worldName = worldName.ToLower();
+
+            // URL Encode the Player Name
+            playerName = Uri.EscapeDataString(playerName);
+
+            // Serialize the payload to JSON
+            string json = JsonConvert.SerializeObject(payload);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            // Build the URL
+            var url = string.Format(CHOCOBO_BARDING_ENDPOINT, API_URL, playerName, worldName);
+
+#if DEBUG
+            Service.Log.Debug($"POST {url}: {json}");
+#endif
+
+            // Send the request
+            var response = await this.client.PostAsync(url, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    return new APIError { IsError = true, ErrorType = APIErrorType.UnclaimedCharacter, ErrorMessage = $"Character {playerName} on {worldName} is not claimed." };
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return new APIError { IsError = true, ErrorType = APIErrorType.InvalidToken, ErrorMessage = "Invalid API key." };
+                }
+
+                return new APIError { IsError = true, ErrorMessage = $"Chocobo Bardings ({response.StatusCode})" };
+            }
+
+            return null;
+        }
     }
 }

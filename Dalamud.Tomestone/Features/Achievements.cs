@@ -8,14 +8,9 @@ namespace Dalamud.Tomestone.Features
 {
     internal static class Achievements
     {
-        internal static unsafe List<Models.Achievement> GetAchievements()
+        internal static unsafe List<Models.Achievement> GetAchievements(List<uint> cache)
         {
             List<Models.Achievement> achievements = new List<Models.Achievement>();
-            Lumina.Excel.ExcelSheet<Lumina.Excel.GeneratedSheets.Achievement>? achievementSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Achievement>();
-            if (achievementSheet == null)
-            {
-                return achievements;
-            }
 
             var achievementState = FFXIVClientStructs.FFXIV.Client.Game.UI.Achievement.Instance();
 
@@ -32,14 +27,14 @@ namespace Dalamud.Tomestone.Features
                 return achievements;
             }
 
-            foreach (var row in achievementSheet)
+            foreach (var achievementId in cache)
             {
 
-                if (achievementState->IsComplete((int)row.RowId))
+                if (achievementState->IsComplete((int)achievementId))
                 {
                     achievements.Add(new Models.Achievement
                     {
-                        id = (uint)row.RowId,
+                        id = (uint)achievementId,
                     });
                     continue;
                 }

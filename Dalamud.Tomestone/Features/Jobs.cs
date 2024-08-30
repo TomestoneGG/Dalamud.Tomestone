@@ -10,6 +10,7 @@ namespace Dalamud.Tomestone.Features
 {
     internal static class Jobs
     {
+        [Obsolete("This method is deprecated/won't be used to send data to tomestone.")]
         internal unsafe static List<Models.Job> GetJobs(PlayerState* playerState)
         {
             List<Models.Job> jobs = new List<Models.Job>();
