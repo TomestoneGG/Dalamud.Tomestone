@@ -30,6 +30,7 @@ public class Configuration : IPluginConfiguration
     public bool SendTriad { get; set; } = true;
     public bool SendOrchestrion { get; set; } = true;
     public bool SendBlueMage { get; set; } = true;
+    public bool SendChocoboBarding { get; set; } = true;
     #endregion
 
     public string ContextMenuButtonName { get; set; } = "Open Tomestone";

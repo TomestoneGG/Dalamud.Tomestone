@@ -7,6 +7,7 @@ namespace Dalamud.Tomestone.Models
     internal class Gearset
     {
         public uint jobId { get; set; } = 0;
+        public uint jobLevel { get; set; } = 0;
         public uint itemLevel { get; set; } = 0;
         [JsonIgnore]
         public bool isItemLevelSynced { get; set; } = false;

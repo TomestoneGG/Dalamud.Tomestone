@@ -1,7 +1,7 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Tomestone.API;
+using Dalamud.Tomestone.Features;
 using Dalamud.Tomestone.Models;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using NetStone;
 using NetStone.Model.Parseables.Character.Achievement;
@@ -28,12 +28,13 @@ namespace Dalamud.Tomestone
     /// </summary>
     internal class DataHandler
     {
-        private Player player; // Player object to store character state
+        private Models.Player player; // Player object to store character state
         private LodestoneClient? lodestoneClient; // Lodestone client to fetch character data, eventually not needed
         private Tomestone plugin; // Reference to the plugin
 
         private DateTime lastHandledFrameworkUpdate = DateTime.MinValue;
         private bool updateRequested = false;
+        private CollectionCache unlockItemCache;
 
         internal unsafe PlayerState* playerState;
         internal unsafe UIState* uiState;
@@ -45,11 +46,13 @@ namespace Dalamud.Tomestone
         {
             plugin = _plugin;
 
+            unlockItemCache = new CollectionCache();
+
             // Initialize the API Client
             api = new TomestoneAPI(plugin.Configuration);
 
             // Initialize the player object
-            player = new Player();
+            player = new Models.Player();
             // Initialize the lodestone client in the background//Hopefully this will be removed in the future
             var clientTask = Task.Run(() => InitLodestoneCient());
         }
@@ -111,22 +114,6 @@ namespace Dalamud.Tomestone
             }
         }
 
-        /// <summary>
-        /// This just prints the current content ID
-        /// TODO: This should return true/false if the content causes our gear to iLvl sync
-        /// </summary>
-        //private unsafe void CheckContent()
-        //{
-        //    var contentDirector = EventFramework.Instance()->GetContentDirector();
-        //    if (contentDirector == null)
-        //    {
-        //        return;
-        //    }
-
-        //    var id = contentDirector->ContentId;
-        //    Service.Log.Info($"Content ID: {id}");
-        //}
-
         public void Update(IPlayerCharacter localPlayer)
         {
             // Check if the plugin is enabled
@@ -154,17 +141,20 @@ namespace Dalamud.Tomestone
                 return;
             }
 
+            // Build/Rebuild the collection cache
+            unlockItemCache.LoadCache();
+
             // Update all data that might change less frequently
             HandleTripleTriadState();
             HandleOrchestrionState();
             HandleBlueMageState();
+            HandleChocoboBardingState();
 #if DEBUG
-            // These aren't in the official Plugin yet (lack an endpoint)
-            HandleJobState();
+            HandleFishState();
             HandleMountState();
             HandleMinionState();
-            HandleAchievementState();
-            HandleFishState();
+            HandleAchievementState();          
+            //HandleHairstyleState();
 #endif
             // Set the last update time to now
             status.lastUpdate = DateTime.Now;
@@ -246,23 +236,66 @@ namespace Dalamud.Tomestone
             }
         }
 
-        private unsafe void HandleJobState()
+        private unsafe void HandleHairstyleState()
         {
-            // Get the jobs from the player state
-            var jobs = Features.Jobs.GetJobs(this.playerState);
-            if (jobs == null)
-            {
-                return;
-            }
+            var hairstyleItemIds = new List<uint>();
 
-            // Check if we have any jobs
-            if (jobs.Count == 0)
+            foreach (var unlockLink in unlockItemCache.Hairstyle)
             {
-                return;
-            }
+                // Check if the hairstyle is unlocked
+                if (!this.uiState->IsUnlockLinkUnlocked(unlockLink))
+                {
+                    continue;
+                }
 
-            // TODO: Send job data to the server
-            Service.Log.Debug($"Player has {jobs.Count} jobs.");
+                // Try to find the hairstyle's item
+                var hairStyleItem = unlockItemCache.GetItemForUnlockLink(unlockLink);
+                if (hairStyleItem == null)
+                {
+                    continue;
+                }
+
+                // Make a list of unique hairStyleItems, so we don't send duplicates
+                if (hairstyleItemIds.Contains(hairStyleItem.RowId))
+                {
+                    continue;
+                }
+
+                hairstyleItemIds.Add(hairStyleItem.RowId);
+                Service.Log.Verbose($"- {hairStyleItem.Name} ({hairStyleItem.RowId})");
+            }
+        }
+
+        private unsafe void HandleChocoboBardingState()
+        {
+            try
+            {
+                if (!plugin.Configuration.SendChocoboBarding || !plugin.Configuration.RemoteConfig.sendChocoboBardings)
+                {
+                    return;
+                }
+
+                // Get the chocobo bardings from the ui state
+                var bardings = BuddyEquip.GetChocoboBardings(this.uiState, unlockItemCache.BuddyEquip);
+
+                if (bardings == null)
+                {
+                    return;
+                }
+
+                // Build a DTO object with the barding IDs
+                var bardingDTO = new ChocoboBardingDTO
+                {
+                    bardings = bardings
+                };
+
+                // Send the barding data to the server
+                api.DoRequest(() => api.SendChocoboBardings(player.name, player.world, bardingDTO));
+            }
+            catch (Exception ex)
+            {
+                Service.Log.Error(ex, "Failed to get Chocobo Bardings.");
+            }
         }
 
         private unsafe void HandleTripleTriadState()
@@ -275,7 +308,7 @@ namespace Dalamud.Tomestone
                 }
 
                 // Get the triple triad cards from the player state
-                var cards = Features.TripleTriad.GetTripleTriadCards(this.uiState);
+                var cards = Features.TripleTriad.GetTripleTriadCards(this.uiState, unlockItemCache.TripleTriadCard);
 
                 if (cards == null)
                 {
@@ -307,7 +340,7 @@ namespace Dalamud.Tomestone
                 }
 
                 // Get the orchestrion rolls from the player state
-                var rolls = Features.Orchestrion.GetOrchestrionRolls(this.playerState);
+                var rolls = Orchestrion.GetOrchestrionRolls(this.playerState, unlockItemCache.OrchestrionRoll);
 
                 if (rolls == null)
                 {
@@ -339,7 +372,7 @@ namespace Dalamud.Tomestone
                 }
 
                 // Get the blue mage spells from the player state
-                var spells = Features.BlueMage.CheckLearnedSpells();
+                var spells = Features.BlueMage.CheckLearnedSpells(unlockItemCache.AozAction);
 
                 if (spells == null)
                 {
@@ -364,7 +397,7 @@ namespace Dalamud.Tomestone
         private unsafe void HandleMountState()
         {
             // Get the mounts from the player state
-            var mounts = Features.Mounts.GetUnlockedMounts(this.playerState);
+            var mounts = Features.Mounts.GetUnlockedMounts(this.playerState, unlockItemCache.Mount);
             if (mounts == null)
             {
                 return;
@@ -383,7 +416,7 @@ namespace Dalamud.Tomestone
         private unsafe void HandleMinionState()
         {
             // Get the minions from the ui state
-            var minions = Features.Minions.GetUnlockedMinions(this.uiState);
+            var minions = Features.Minions.GetUnlockedMinions(this.uiState, unlockItemCache.Minion);
             if (minions == null)
             {
                 return;
@@ -402,7 +435,7 @@ namespace Dalamud.Tomestone
         private unsafe void HandleAchievementState()
         {
             // Get the achievements from the player state
-            var achievements = Features.Achievements.GetAchievements();
+            var achievements = Features.Achievements.GetAchievements(unlockItemCache.Achievement);
             if (achievements == null)
             {
                 return;

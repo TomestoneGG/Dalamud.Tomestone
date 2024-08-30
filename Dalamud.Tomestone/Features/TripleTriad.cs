@@ -1,36 +1,22 @@
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using Lumina.Excel.GeneratedSheets;
-using System;
 using System.Collections.Generic;
 
 namespace Dalamud.Tomestone.Features
 {
     internal static class TripleTriad
     {
-        internal static unsafe List<uint> GetTripleTriadCards(UIState* uiState)
+        internal static unsafe List<uint> GetTripleTriadCards(UIState* uiState, List<uint> cache)
         {
-            var triadCards = new List<uint>();
-            // Ensure UIState is initialized
-            if (uiState == null)
+            var unlockedTripleTriadCards = new List<uint>();
+            foreach (var tripleTriadCardId in cache)
             {
-                throw new Exception("UIState is null.");
-            }
-
-            var triadSheet = Service.DataManager.GetExcelSheet<TripleTriadCard>();
-            if (triadSheet == null)
-            {
-                throw new Exception("Triple Triad sheet is null.");
-            }
-
-            foreach (var row in triadSheet)
-            {
-                if (uiState->IsTripleTriadCardUnlocked((ushort)row.RowId))
+                if (uiState->IsTripleTriadCardUnlocked((ushort)tripleTriadCardId))
                 {
-                    triadCards.Add((uint)row.RowId);
+                    unlockedTripleTriadCards.Add(tripleTriadCardId);
                 }
             }
 
-            return triadCards;
+            return unlockedTripleTriadCards;
         }
     }
 }

@@ -63,18 +63,20 @@ namespace Dalamud.Tomestone.Features
             return attributes;
         }            
 
-        internal static unsafe Gearset GetGear(IPlayerCharacter localPlayer, PlayerState* playerState)
+        // TODO: Fix this up a bit so it grabs some data from our own structs
+        internal static unsafe Gearset GetGear( IPlayerCharacter dalamudPlayer, PlayerState* playerState)
         {
             Gearset gear = new Gearset();
             try
             {
-                // Grab the player's current job
-                var currentJob = localPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
+                // Grab the player's current job and level
+                var currentJob = dalamudPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
                 if (currentJob == null)
                 {
                     throw new Exception("Failed to get current job name.");
                 }
                 gear.jobId = (uint)currentJob.RowId;
+                gear.jobLevel = (uint)dalamudPlayer.Level;
 
                 // Grab the player's current gear (in a loop going through the ItemSlot enum)
                 var lastSlot = Enum.GetValues(typeof(ItemSlot)).Cast<ItemSlot>().Last();
