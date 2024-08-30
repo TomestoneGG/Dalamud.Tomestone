@@ -44,9 +44,9 @@ namespace Dalamud.Tomestone.Features
                 attributes.Add(new Models.Attribute { name = "Piety", value = playerAttributes[6] });
 
                 // Get the player's secondary attributes
-                attributes.Add(new Models.Attribute { name = "Critical Hit", value = playerAttributes[27] });
+                attributes.Add(new Models.Attribute { name = "Critical Hit Rate", value = playerAttributes[27] });
                 attributes.Add(new Models.Attribute { name = "Determination", value = playerAttributes[44] });
-                attributes.Add(new Models.Attribute { name = "Direct Hit", value = playerAttributes[22] });
+                attributes.Add(new Models.Attribute { name = "Direct Hit Rate", value = playerAttributes[22] });
                 attributes.Add(new Models.Attribute { name = "Skill Speed", value = playerAttributes[45] });
                 attributes.Add(new Models.Attribute { name = "Spell Speed", value = playerAttributes[46] });
                 attributes.Add(new Models.Attribute { name = "Tenacity", value = playerAttributes[19] });
@@ -61,8 +61,7 @@ namespace Dalamud.Tomestone.Features
             }
 
             return attributes;
-        }
-            
+        }            
 
         internal static unsafe Gearset GetGear(IPlayerCharacter localPlayer, PlayerState* playerState)
         {
