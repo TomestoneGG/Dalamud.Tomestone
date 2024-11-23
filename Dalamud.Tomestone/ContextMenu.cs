@@ -1,10 +1,4 @@
 using Dalamud.Game.Gui.ContextMenu;
-using Dalamud.Utility;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Dalamud.Tomestone
 {
@@ -41,7 +35,7 @@ namespace Dalamud.Tomestone
                 case "CrossWorldLinkshell":
                 case "ContentMemberList": // Eureka/Bozja/...
                 case "BeginnerChatList":
-                    return menuTargetDefault.TargetName != string.Empty && DalamudUtils.IsWorldValid(menuTargetDefault.TargetHomeWorld.Id);
+                    return menuTargetDefault.TargetName != string.Empty && DalamudUtils.IsWorldValid(menuTargetDefault.TargetHomeWorld.RowId);
 
                 case "BlackList":
                 case "MuteList":
@@ -76,7 +70,7 @@ namespace Dalamud.Tomestone
             }
 
             string playerName = menuTargetDefault.TargetName;
-            var world = DalamudUtils.GetWorld(menuTargetDefault.TargetHomeWorld.Id);
+            var world = DalamudUtils.GetWorld(menuTargetDefault.TargetHomeWorld.RowId);
 
             // Ensure the world is valid
             if (!DalamudUtils.IsWorldValid(world))
@@ -84,7 +78,7 @@ namespace Dalamud.Tomestone
                 return;
             }
 
-            Utils.OpenTomestoneLink(world.Name, playerName);
+            Utils.OpenTomestoneLink(world.Name.ExtractText(), playerName);
         }
     }
 }

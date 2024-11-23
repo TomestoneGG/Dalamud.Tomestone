@@ -1,10 +1,7 @@
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Lumina.Excel.Sheets;
 
 namespace Dalamud.Tomestone.Features
 {
@@ -25,10 +22,10 @@ namespace Dalamud.Tomestone.Features
 
             if (classSheet != null)
             {
-                for (int i = 0; i < classSheet.RowCount; i++)
+                for (int i = 0; i < classSheet.Count; i++)
                 {
                     var job = classSheet.GetRow(Convert.ToUInt32(i));
-                    if (job == null || job.ExpArrayIndex < 0)
+                    if (job.ExpArrayIndex < 0)
                     {
                         continue;
                     }

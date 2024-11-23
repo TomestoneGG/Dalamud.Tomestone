@@ -79,11 +79,12 @@ namespace Dalamud.Tomestone
             }
 
             // Grab the players current job and level, if it's different from the last update, send the data
-            var currentJob = localPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
-            if (currentJob == null)
-            {
-                return;
-            }
+            // var currentJob = localPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
+            var currentJob = localPlayer.ClassJob;
+            // if (currentJob == null)
+            // {
+                // return;
+            // }
 
             GetPlayerState();
             GetUIState();
@@ -256,13 +257,13 @@ namespace Dalamud.Tomestone
                 }
 
                 // Make a list of unique hairStyleItems, so we don't send duplicates
-                if (hairstyleItemIds.Contains(hairStyleItem.RowId))
+                if (hairstyleItemIds.Contains(hairStyleItem.Value.RowId))
                 {
                     continue;
                 }
 
-                hairstyleItemIds.Add(hairStyleItem.RowId);
-                Service.Log.Verbose($"- {hairStyleItem.Name} ({hairStyleItem.RowId})");
+                hairstyleItemIds.Add(hairStyleItem.Value.RowId);
+                Service.Log.Verbose($"- {hairStyleItem.Value.Name.ExtractText()} ({hairStyleItem.Value.RowId})");
             }
         }
 

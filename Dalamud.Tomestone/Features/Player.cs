@@ -1,5 +1,4 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Tomestone.API;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System;
 using System.Threading.Tasks;
@@ -30,20 +29,22 @@ namespace Dalamud.Tomestone.Features
             else
                 result.currentJobLevel = player.currentJobLevel;
 
-            var world = localPlayer.HomeWorld.GetWithLanguage(Game.ClientLanguage.English);
-            if (world == null)
-            {
-                throw new Exception("Failed to get world name.");
-            }
-            result.world = world.Name.ToString();
+            // var world = localPlayer.HomeWorld.GetWithLanguage(Game.ClientLanguage.English);
+            var world = localPlayer.HomeWorld;
+            // if (world == null)
+            // {
+                // throw new Exception("Failed to get world name.");
+            // }
+            result.world = world.Value.Name.ExtractText();
 
             // Print out the player's current job and level
-            var currentJob = localPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
-            if (currentJob == null)
-            {
-                throw new Exception("Failed to get current job name.");
-            }
-            result.currentJobId = (uint)currentJob.RowId;
+            // var currentJob = localPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
+            var currentJob = localPlayer.ClassJob;
+            // if (currentJob == null)
+            // {
+                // throw new Exception("Failed to get current job name.");
+            // }
+            result.currentJobId = currentJob.RowId;
 
             // Get the current zone ID
             var currentTerritory = Service.ClientState.TerritoryType;
@@ -59,18 +60,19 @@ namespace Dalamud.Tomestone.Features
 
             string currentWorldName = string.Empty;
             // Check if the player is traveling to another world
-            if (localPlayer.CurrentWorld != null)
+            if (localPlayer?.CurrentWorld != null)
             {
-                var currentWorld = localPlayer.CurrentWorld.GetWithLanguage(Game.ClientLanguage.English);
-                if (currentWorld == null)
-                {
-                    throw new Exception("Failed to get current world name.");
-                }
+                // var currentWorld = localPlayer.CurrentWorld.GetWithLanguage(Game.ClientLanguage.English);
+                var currentWorld = localPlayer.CurrentWorld;
+                // if (currentWorld == null)
+                // {
+                    // throw new Exception("Failed to get current world name.");
+                // }
 
                 // Check if the player is traveling to another world, or if they are in the same world
-                if (currentWorld.Name != world.Name)
+                if (currentWorld.Value.Name.ExtractText() != world.Value.Name.ExtractText())
                 {
-                    result.currentWorldName = currentWorld.Name.ToString().ToLower();
+                    result.currentWorldName = currentWorld.Value.Name.ExtractText().ToLower();
                 }
             }
 
