@@ -70,11 +70,12 @@ namespace Dalamud.Tomestone.Features
             try
             {
                 // Grab the player's current job and level
-                var currentJob = dalamudPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
-                if (currentJob == null)
-                {
-                    throw new Exception("Failed to get current job name.");
-                }
+                // var currentJob = dalamudPlayer.ClassJob.GetWithLanguage(Game.ClientLanguage.English);
+                var currentJob = dalamudPlayer.ClassJob;
+                // if (currentJob == null)
+                // {
+                    // throw new Exception("Failed to get current job name.");
+                // }
                 gear.jobId = (uint)currentJob.RowId;
                 gear.jobLevel = (uint)dalamudPlayer.Level;
 

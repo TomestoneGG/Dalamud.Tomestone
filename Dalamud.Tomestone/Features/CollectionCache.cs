@@ -1,6 +1,6 @@
-using Lumina.Excel.GeneratedSheets;
 using System.Collections.Generic;
 using System.Linq;
+using Lumina.Excel.Sheets;
 
 namespace Dalamud.Tomestone.Features
 {
@@ -45,7 +45,7 @@ namespace Dalamud.Tomestone.Features
         {
             if (this.BuddyEquip.Count != 0 && !force) return;
 
-            var buddyEquipSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.BuddyEquip>();
+            var buddyEquipSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.Sheets.BuddyEquip>();
             if (buddyEquipSheet == null) return;
 
             foreach (var row in buddyEquipSheet)
@@ -97,7 +97,7 @@ namespace Dalamud.Tomestone.Features
         {
             if (this.OrchestrionRoll.Count != 0 && !force) return;
 
-            var orchestrionSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets2.Orchestrion>();
+            var orchestrionSheet = Service.DataManager.GetExcelSheet<Lumina.Excel.Sheets.Orchestrion>();
             if (orchestrionSheet == null) return;
 
             foreach (var row in orchestrionSheet)
@@ -142,10 +142,10 @@ namespace Dalamud.Tomestone.Features
 
             foreach (var item in itemSheet)
             {
-                var itemAction = item.ItemAction.Value;
+                var itemAction = item.ItemAction.ValueNullable;
                 if (itemAction == null) continue;
 
-                switch (itemAction.Type)
+                switch (itemAction.Value.Type)
                 {
                     case 0xA49:
                         // TODO: Check wether this is hairstyle or emote.
@@ -168,7 +168,7 @@ namespace Dalamud.Tomestone.Features
 
             foreach (var (transient, action) in AozTransientCache.Zip(AozActionsCache).OrderBy(pair => pair.First.Number))
             {
-                AozAction.Add(new AozCacheItem { unlockLink = action.Action.Value!.UnlockLink, number = transient.Number });
+                AozAction.Add(new AozCacheItem { unlockLink = action.Action.Value!.UnlockLink.RowId, number = transient.Number });
             }
         }
 
