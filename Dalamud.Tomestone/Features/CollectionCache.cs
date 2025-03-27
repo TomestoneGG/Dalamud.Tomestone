@@ -128,7 +128,7 @@ namespace Dalamud.Tomestone.Features
 
             foreach (var charaMakeCustomize in charaMakeCustomizeSheet)
             {
-                Hairstyle.Add(charaMakeCustomize.Data);
+                Hairstyle.Add(charaMakeCustomize.UnlockLink);
             }
         }
 
