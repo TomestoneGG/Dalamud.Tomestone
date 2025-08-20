@@ -14,9 +14,9 @@
         "DownloadCount": 0,
         "LastUpdate": 0,
         "LoadPriority": 69420,
-        "DownloadLinkInstall": "https://github.com/TomestoneGG/Dalamud.Tomestone/releases/download/0.3.1.0/Dalamud.Tomestone.zip",
-        "DownloadLinkTesting": "https://github.com/TomestoneGG/Dalamud.Tomestone/releases/download/0.3.1.0/Dalamud.Tomestone.zip",
-        "DownloadLinkUpdate": "https://github.com/TomestoneGG/Dalamud.Tomestone/releases/download/0.3.1.0/Dalamud.Tomestone.zip",
+        "DownloadLinkInstall": "https://github.com/TomestoneGG/Dalamud.Tomestone/releases/download/0.4.0.0/Dalamud.Tomestone.zip",
+        "DownloadLinkTesting": "https://github.com/TomestoneGG/Dalamud.Tomestone/releases/download/0.4.0.0/Dalamud.Tomestone.zip",
+        "DownloadLinkUpdate": "https://github.com/TomestoneGG/Dalamud.Tomestone/releases/download/0.4.0.0/Dalamud.Tomestone.zip",
         "IconUrl": "https://raw.githubusercontent.com/TomestoneGG/Dalamud.Tomestone/master/Data/tomestone.png"
     }
 ]
