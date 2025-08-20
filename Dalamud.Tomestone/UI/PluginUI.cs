@@ -92,7 +92,7 @@ namespace Dalamud.Tomestone.UI
                         {
                             ImGuiEx.LineCentered("###TomestoneLogo", () =>
                             {
-                                ImGui.Image(logo.ImGuiHandle, new(125f, 125f));
+                                ImGui.Image(logo.Handle, new(125f, 125f));
                                 if (ImGui.IsItemHovered())
                                     ImGui.SetTooltip(imageHint);
                             });
