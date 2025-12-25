@@ -15,9 +15,9 @@ namespace Dalamud.Tomestone
             return IsWorldValid(GetWorld(worldId));
         }
 
-        public static bool IsWorldValid(World? world)
+        public static bool IsWorldValid(World world)
         {
-            if (world == null || world?.Name.Data.IsEmpty || GetRegionCode(world) == string.Empty)
+            if (world.Name.Data.IsEmpty || GetRegionCode(world) == string.Empty)
             {
                 return false;
             }
@@ -25,16 +25,16 @@ namespace Dalamud.Tomestone
             return char.IsUpper((char)world.Name.Data.Span[0]);
         }
 
-        public static World? GetWorld(uint worldId)
+        public static World GetWorld(uint worldId)
         {
             var worldSheet = Service.DataManager.GetExcelSheet<World>()!;
             var world = worldSheet.FirstOrDefault(x => x.RowId == worldId);
             return world;
         }
 
-        public static string GetRegionCode(World? world)
+        public static string GetRegionCode(World world)
         {
-            return world?.DataCenter.ValueNullable?.Region switch
+            return world.DataCenter.ValueNullable?.Region switch
             {
                 1 => "JP",
                 2 => "NA",
