@@ -78,7 +78,7 @@ namespace Dalamud.Tomestone
                 return;
             }
 
-            Utils.OpenTomestoneLink(world.Name.ExtractText(), playerName);
+            Utils.OpenTomestoneLink(world!.Name.ExtractText(), playerName);
         }
     }
 }
