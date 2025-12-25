@@ -145,7 +145,7 @@ namespace Dalamud.Tomestone.Features
                 var itemAction = item.ItemAction.ValueNullable;
                 if (itemAction == null) continue;
 
-                switch (itemAction.Value.Type)
+                switch (itemAction.Value.Action.RowId)
                 {
                     case 0xA49:
                         // TODO: Check wether this is hairstyle or emote.

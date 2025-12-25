@@ -39,8 +39,7 @@ public class Configuration : IPluginConfiguration
     internal RemoteConfigDTO RemoteConfig = new RemoteConfigDTO();
 
     public static readonly string VersionString = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
-    public static readonly string DalamudVersion = Util.AssemblyVersion;
-
+    
     // TODO
     public void ManualSave()
     {
