@@ -28,7 +28,7 @@ namespace Dalamud.Tomestone
         public static World? GetWorld(uint worldId)
         {
             var worldSheet = Service.DataManager.GetExcelSheet<World>()!;
-            var world = worldSheet.FirstOrNull(x => x.RowId == worldId);
+            var world = worldSheet.FirstOrDefault(x => x.RowId == worldId);
             return world;
         }
 
