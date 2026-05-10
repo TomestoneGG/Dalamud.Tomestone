@@ -34,7 +34,7 @@ namespace Dalamud.Tomestone
 
         public static string GetRegionCode(World world)
         {
-            return world.DataCenter.ValueNullable?.Region switch
+            return world.DataCenter.ValueNullable?.Region.RowId switch
             {
                 1 => "JP",
                 2 => "NA",

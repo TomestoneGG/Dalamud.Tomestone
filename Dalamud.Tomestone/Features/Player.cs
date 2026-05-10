@@ -11,12 +11,12 @@ namespace Dalamud.Tomestone.Features
         {
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            while (Service.ClientState.LocalPlayer == null && sw.ElapsedMilliseconds < maxWait)
+            while (Service.Objects.LocalPlayer == null && sw.ElapsedMilliseconds < maxWait)
             {
                 await Task.Delay(100);
             }
 
-            return Service.ClientState.LocalPlayer;
+            return Service.Objects.LocalPlayer;
         }
 
         // Obtains all character information we can get using Dalamud

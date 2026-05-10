@@ -1,4 +1,5 @@
 using Dalamud.IoC;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 
@@ -14,5 +15,6 @@ namespace Dalamud.Tomestone
         [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
         [PluginService] internal static IPartyList PartyList { get; private set; } = null!;
         [PluginService] internal static IContextMenu ContextMenu { get; private set; } = null!;
+        [PluginService] internal static IObjectTable Objects { get; private set; } = null!;
     }
 }

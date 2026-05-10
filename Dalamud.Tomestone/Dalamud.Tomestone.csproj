@@ -1,4 +1,4 @@
-<Project Sdk="Dalamud.NET.Sdk/14.0.1">
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
     <PropertyGroup Label="Target">
         <Configurations>Debug;Release</Configurations>
     </PropertyGroup>
@@ -49,6 +49,11 @@
         <DalamudLibPath>$(HOME)/.xlcore/dalamud/Hooks/$(DalamudVersion)/</DalamudLibPath>
     </PropertyGroup>
 
+    <!-- Dalamud Configuration (macOS-specific) -->
+    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+        <DalamudLibPath>$(HOME)/Library/Application Support/XIV on Mac/dalamud/Hooks/$(DalamudVersion)/</DalamudLibPath>
+    </PropertyGroup>
+
     <!-- Assembly Reference Locations -->
     <PropertyGroup>
         <AssemblySearchPaths>
@@ -89,9 +94,5 @@
         <PackageReference Include="NetStone" Version="1.4.1" />
         <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
     </ItemGroup>
-
-    <PropertyGroup>
-        <DalamudLibPath>$(appdata)\xivlauncher\Addon\Hooks\dev\</DalamudLibPath>
-    </PropertyGroup>
 
 </Project>

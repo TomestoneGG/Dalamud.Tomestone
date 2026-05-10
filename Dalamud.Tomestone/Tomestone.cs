@@ -127,7 +127,7 @@ public unsafe class Tomestone : IDalamudPlugin
         if (!Service.ClientState.IsLoggedIn) return;
 
         // Grab the local player
-        var localPlayer = Service.ClientState.LocalPlayer;
+        var localPlayer = Service.Objects.LocalPlayer;
 
         // Polling the framework is required to know if we had a ClassJob change
         try {
@@ -137,7 +137,7 @@ public unsafe class Tomestone : IDalamudPlugin
         }
     }
 
-    private void OnTerritoryChanged(ushort ID)
+    private void OnTerritoryChanged(uint ID)
     {
         // Block if we aren't ingame yet
         if (!Service.ClientState.IsLoggedIn) return;
